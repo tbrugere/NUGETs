@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "nugets"
+version = "0.1.0"
+description = "NeUral GEomeTry"
+authors = ["Tristan Brugère <67050900+tbrugere@users.noreply.github.com>", 
+            "Samantha Chen <srchen98@gmail.com>"]
+license = "CeCILL-B"
+readme = "README.rst"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+torch = "^2.5.1"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.9.3"
+ruff-lsp = "^0.0.60"
+
+
+[tool.poetry.group.doc.dependencies]
+sphinx = "^8.1.3"
+sphinx-rtd-theme = "^3.0.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
