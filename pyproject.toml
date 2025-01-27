@@ -3,10 +3,13 @@ name = "nugets"
 version = "0.1.0"
 description = "NeUral GEomeTry — benchmarking neural networks on geometric tasks"
 readme = "README.rst"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [{name="Tristan Brugère",  email="<67050900+tbrugere@users.noreply.github.com>"}, 
             {name="Samantha Chen", email="<srchen98@gmail.com>"}]
 dependencies = [
+    "lightning>=2.5.0.post0",
+    "ml-lib",
+    "torch-heterogeneous-batching", 
     "torch>=2.5.1",
 ]
 
@@ -32,3 +35,11 @@ extensions = [
 ]
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+
+[tool.uv.sources]
+ml-lib = { git = "https://github.com/tbrugere/ml_lib.git", rev = "devel" }
+torch-heterogeneous-batching = { git = "ssh://git@github.com/tbrugere/pytorch_heterogeneous_batching.git", rev = "main" }
