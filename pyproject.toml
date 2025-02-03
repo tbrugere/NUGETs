@@ -24,6 +24,9 @@ dev = [
     "ruff>=0.9.3",
     "ruff-lsp>=0.0.60",
 ]
+test = [
+    "pytest>=8.3.4",
+]
 
 [tool.sphinx-pyproject]
 extensions = [
@@ -43,3 +46,6 @@ venv = ".venv"
 [tool.uv.sources]
 ml-lib = { git = "https://github.com/tbrugere/ml_lib.git", rev = "devel" }
 torch-heterogeneous-batching = { git = "ssh://git@github.com/tbrugere/pytorch_heterogeneous_batching.git", rev = "main" }
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
