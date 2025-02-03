@@ -1,4 +1,3 @@
-
 from typing import Callable
 
 from math import sqrt
@@ -43,7 +42,6 @@ def triangular_index(i):
 
         i = frac{l * (l - 1)}{2} + k
     """
-
     # l = (1 + sqrt(1 + 8 * i) / 2) 
     l = int((sqrt(1 + 8 * i) - 1) / 2) + 1
 
@@ -81,5 +79,8 @@ class DistanceTask(Task):
 
     def get_encoder_decoder(self, backbone):
         """Get the encoder-decoder"""
-        from .models.distance import DistanceEncoderDecoder
+        from nugets.models.encoder_decoders.distances import DistanceEncoderDecoder
         return DistanceEncoderDecoder(backbone)
+
+    def datapoint_type(self):
+        return DistanceDatapoint
