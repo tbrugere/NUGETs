@@ -1,8 +1,12 @@
-from typing import Any, Generic, dataclass_transform, get_type_hints, overload, Literal, TypeVar, Iterator
+from typing import Any, Generic, dataclass_transform, get_type_hints, overload, Literal, TypeVar, Iterator, TYPE_CHECKING
 
 from dataclasses import dataclass
 from ml_lib.misc.data_structures import Maybe
+import torch
 from torch import nn
+
+if TYPE_CHECKING:
+    from argparse import ArgumentParser, Namespace
 
 T = TypeVar('T')
 
@@ -17,6 +21,10 @@ class Hyperparameter(Generic[T]):
         """Validate the hyperparameter value"""
         if not isinstance(val, self.type):
             raise ValueError(f"Expected {self.type}, got {type(val)}")
+
+    def parse(self, val: str) -> T:
+        """Parse the hyperparameter value from a string"""
+        return self.type(val)
 
 class IntHyperparameter(Hyperparameter[int]):
     """Integer hyperparameter"""
@@ -82,6 +90,14 @@ class BackBone(nn.Module):
         del encoded, return_reg_loss
         raise NotImplementedError
 
+    def get_input_dim(self):
+        """Get the input dimension of the backbone"""
+        raise NotImplementedError
+
+    def get_output_dim(self):
+        """Get the output dimension of the backbone"""
+        raise NotImplementedError
+
     """
     Hyperparameters
     ---------------
@@ -135,3 +151,47 @@ class BackBone(nn.Module):
         for k, h_spec in self.list_hyperparameters(return_types=True):
             h_spec.validate(hyperparameters[k])
             setattr(self, k, hyperparameters[k])
+
+    @classmethod
+    def get_argparse_argument(cls, attr_name: str, hyperparameter: Hyperparameter)\
+            -> str:
+        """Get the argparse argument for a hyperparameter"""
+        backbone_name = cls.__name__.lower()
+        attr_name_arg = attr_name.replace("_", "-")
+        argument = f"--{backbone_name}-{attr_name_arg}"
+        return argument
+
+    @classmethod
+    def get_argarse_dest(cls, attr_name: str) -> str:
+        """Get the argparse destination for a hyperparameter"""
+        return f"backbone_{attr_name}"
+
+    @classmethod
+    def argument_parser(cls, parser: "ArgumentParser") -> "ArgumentParser":
+        """Add hyperparameters to the argument parser"""
+        backbone_name = cls.__name__.lower()
+        group = parser.add_argument_group(f"{backbone_name} hyperparameters")
+        for attr_name, t in cls.list_hyperparameters(return_types=True):
+            optional = not t.default.is_empty
+            argument = cls.get_argparse_argument(attr_name, t)
+            dest = cls.get_argarse_dest(attr_name)
+            if optional:
+                group.add_argument(argument, type=t.type,
+                                    dest=dest, default=t.default.value,
+                                    optional=True,
+                                    help=t.description)
+            else:
+                group.add_argument(argument, type=t.type,
+                                dest=dest, optional=False,
+                                help=t.description)
+        return parser
+    
+    @classmethod
+    def from_args(cls, args: "Namespace") -> "BackBone":
+        """Create a backbone from arguments"""
+        kwargs = {}
+        for attr_name, t in cls.list_hyperparameters(return_types=True):
+            dest = cls.get_argarse_dest(attr_name)
+            kwargs[attr_name] = getattr(args, dest)
+        return cls(**kwargs)
+

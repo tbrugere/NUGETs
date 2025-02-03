@@ -52,6 +52,37 @@ class EncoderDecoder(nn.Module):
         del batch, backbone_result, encoder_info
         raise NotImplementedError
 
+class EncoderDecoderWithProjection(EncoderDecoder):
+    """Base class for encoder-decoder models
+
+    Encoder-decoder models have:
+
+        - a set of hyperparameters
+        - learnable parameters
+
+    """
+
+    in_proj: nn.Linear
+    out_proj: nn.Linear
+    
+    def __init__(self, input_dim: int, backbone_input_dim: int,
+                 backbone_output_dim: int, output_dim: int|None):
+        super().__init__()
+        if output_dim is None:
+            output_dim = input_dim
+
+        self.in_proj = nn.Linear(input_dim, backbone_input_dim)
+        self.out_proj = nn.Linear(backbone_output_dim, output_dim)
+
+
+    def decode(self, backbone_result: Any) -> Any:
+        return self.out_proj(backbone_result)
+
+    def compute_loss(self, batch: Datapoint,  
+                     backbone_result: Any, encoder_info: Any) -> torch.Tensor:
+        del batch, backbone_result, encoder_info
+        raise NotImplementedError
+
 
 class Model(pl.LightningModule):
     """Base class for all models
@@ -66,11 +97,19 @@ class Model(pl.LightningModule):
     task: "Task"
     encoder_decoder: nn.Module
     backbone: BackBone
+    
+    ####### training parameters
+    batch_size: int
+    learning_rate: float
 
-    def __init__(self, backbone: BackBone, task: "Task"):
+    def __init__(self, backbone: BackBone, task: "Task", 
+                 batch_size: int, learning_rate: float):
         super().__init__()
         self.backbone = backbone
         self.encoder_decoder = task.get_encoder_decoder(backbone)
+        self.task = task
+        self.batch_size = batch_size
+        self.learning_rate = learning_rate
 
     def forward(self, batch: Datapoint) -> Any:
         """Forward pass of the model"""
@@ -88,5 +127,25 @@ class Model(pl.LightningModule):
             self.log('train_reg_loss', reg_loss)
             loss = loss + reg_loss
         return loss
-    
-    def 
+
+    def configure_optimizers(self):
+        """Configure the optimizer"""
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        return optimizer
+
+    def prepare_data(self):
+        """Prepare the data"""
+        self.task.prepare_data()
+
+    def train_dataloader(self):
+        """Get the training dataloader"""
+        return self.task.get_dataloader("train", self.batch_size)
+
+    def val_dataloader(self):
+        """Get the training dataloader"""
+        return self.task.get_dataloader("val", self.batch_size)
+
+    def test_dataloader(self):
+        """Get the training dataloader"""
+        return self.task.get_dataloader("test", self.batch_size)
+
