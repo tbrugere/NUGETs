@@ -715,7 +715,7 @@ wheels = [
 [[package]]
 name = "ml-lib"
 version = "0.1.0"
-source = { git = "https://github.com/tbrugere/ml_lib.git?rev=devel#ff78d97442f086a230fd353464df2c47a7b63d2c" }
+source = { git = "https://github.com/tbrugere/ml_lib?rev=devel#ff78d97442f086a230fd353464df2c47a7b63d2c" }
 dependencies = [
     { name = "numpy" },
     { name = "pydantic" },
@@ -823,6 +823,7 @@ dependencies = [
     { name = "lightning" },
     { name = "ml-lib" },
     { name = "torch" },
+    { name = "torch-heterogeneous-batching" },
     { name = "torch-scatter", version = "2.1.2", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 'x86_64' or sys_platform != 'linux'" },
     { name = "torch-scatter", version = "2.1.2+pt25cu124", source = { url = "https://data.pyg.org/whl/torch-2.5.0%2Bcu124/torch_scatter-2.1.2%2Bpt25cu124-cp311-cp311-linux_x86_64.whl" }, marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
 ]
@@ -847,6 +848,7 @@ requires-dist = [
     { name = "lightning", specifier = ">=2.5.0.post0" },
     { name = "ml-lib", git = "https://github.com/tbrugere/ml_lib.git?rev=devel" },
     { name = "torch", specifier = ">=2.5.1" },
+    { name = "torch-heterogeneous-batching", git = "ssh://git@github.com/tbrugere/pytorch_heterogeneous_batching.git?rev=main" },
     { name = "torch-scatter", marker = "platform_machine != 'x86_64' or sys_platform != 'linux'" },
     { name = "torch-scatter", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'", url = "https://data.pyg.org/whl/torch-2.5.0%2Bcu124/torch_scatter-2.1.2%2Bpt25cu124-cp311-cp311-linux_x86_64.whl" },
 ]
@@ -1850,6 +1852,17 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/dd/b0/26f06f9428b250d856f6d512413e9e800b78625f63801cbba13957432036/torch-2.6.0-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:a0d5e1b9874c1a6c25556840ab8920569a7a4137afa8a63a32cee0bc7d89bd4b", size = 95611439 },
     { url = "https://files.pythonhosted.org/packages/c2/9c/fc5224e9770c83faed3a087112d73147cd7c7bfb7557dcf9ad87e1dda163/torch-2.6.0-cp313-cp313-win_amd64.whl", hash = "sha256:510c73251bee9ba02ae1cb6c9d4ee0907b3ce6020e62784e2d7598e0cfa4d6cc", size = 204126475 },
     { url = "https://files.pythonhosted.org/packages/88/8b/d60c0491ab63634763be1537ad488694d316ddc4a20eaadd639cedc53971/torch-2.6.0-cp313-none-macosx_11_0_arm64.whl", hash = "sha256:ff96f4038f8af9f7ec4231710ed4549da1bdebad95923953a25045dcf6fd87e2", size = 66536783 },
+]
+
+[[package]]
+name = "torch-heterogeneous-batching"
+version = "0.1.0"
+source = { git = "ssh://git@github.com/tbrugere/pytorch_heterogeneous_batching.git?rev=main#0f1969411f1908099718b6ee3679b84ddd2e97d5" }
+dependencies = [
+    { name = "ml-lib" },
+    { name = "torch" },
+    { name = "torch-scatter", version = "2.1.2", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 'x86_64' or sys_platform != 'linux'" },
+    { name = "torch-scatter", version = "2.1.2+pt25cu124", source = { url = "https://data.pyg.org/whl/torch-2.5.0%2Bcu124/torch_scatter-2.1.2%2Bpt25cu124-cp311-cp311-linux_x86_64.whl" }, marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
 ]
 
 [[package]]
