@@ -22,3 +22,6 @@ It will automatically create a virtual environment in ``.venv``, which you can t
 .. code-block:: console
 
    $ source .venv/bin/activate
+
+Run
+====
