@@ -36,5 +36,4 @@ def test_transformer():
 
     trainer = pl.Trainer(max_epochs=1, limit_train_batches=2, log_every_n_steps=1, default_root_dir="workdir/")
     trainer.fit(model=model)
-
-
+    

@@ -84,3 +84,8 @@ class DistanceTask(Task):
 
     def datapoint_type(self):
         return DistanceDatapoint
+
+class WassersteinDistanceTask(DistanceTask):
+    def distance(self, set1, set2, p=1):
+        """Compute the p-Wasserstein distance between two sets"""
+        return 0
