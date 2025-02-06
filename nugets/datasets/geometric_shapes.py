@@ -1,5 +1,6 @@
 from typing import Literal
 import numpy as np
+import torch
 
 from ml_lib.datasets.datasets.randomly_generated_dataset import GeneratedDataset
 
@@ -55,6 +56,9 @@ class Torus4D(GeneratedDataset[Point_datapoint]):
         point = np.array([np.cos(u), np.sin(u), np.cos(v), np.sin(v)])
         return Point_datapoint(point=torch.as_tensor(point, dtype=torch.float32))
 
+    def dataset_parameters(self):
+        return {'dim': 2, }
+
 
 
 ################################## set-level datasets
@@ -75,7 +79,7 @@ class GrowingCircles(GeneratedDataset[Set_datapoint]):
     radius: Literal['linear', 'sqrt', 'log', 'constant']
 
     def __init__(self, dim: int = 2, min_points=8, max_points=32, size_multiplier=1.,
-                 radius="linear", **kwargs):
+                 radius: Literal['linear', 'sqrt', 'log', 'constant']="linear", **kwargs):
         super().__init__(**kwargs)
         self.dim = dim
         self.min_points = min_points
@@ -99,4 +103,4 @@ class GrowingCircles(GeneratedDataset[Set_datapoint]):
         return f[self.radius](n_points) * self.size_multiplier
 
     def dataset_parameters(self):
-        return {'input_dim': self.dim, 'min_points': self.min_points, 'max_points': self.max_points}
+        return {'dim': self.dim, 'min_points': self.min_points, 'max_points': self.max_points}

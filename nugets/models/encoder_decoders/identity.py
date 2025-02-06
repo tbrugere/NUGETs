@@ -30,5 +30,6 @@ class SetIdentityEncoderDecoder(EncoderDecoderWithProjection):
 
     def compute_loss(self, batch: Set_batch, backbone_result: Batch, encoder_info):
         del encoder_info
-        loss = self.loss(batch.pointset, backbone_result)
+        decoded = self.decode(backbone_result)
+        loss = self.loss(batch.pointset, decoded)
         return loss

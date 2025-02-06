@@ -1,9 +1,13 @@
-from typing import Any, Generic, dataclass_transform, get_type_hints, overload, Literal, TypeVar, Iterator, TYPE_CHECKING
+from typing import Any, Generic, dataclass_transform, get_type_hints, overload, Literal, TypeVar, Iterator, TYPE_CHECKING, ClassVar
 
 from dataclasses import dataclass
-from ml_lib.misc.data_structures import Maybe
+from logging import getLogger
+
+from ml_lib.misc.data_structures import Maybe, SingletonMeta
 import torch
 from torch import nn
+
+log = getLogger(__name__)
 
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
@@ -26,17 +30,36 @@ class Hyperparameter(Generic[T]):
         """Parse the hyperparameter value from a string"""
         return self.type(val)
 
-class IntHyperparameter(Hyperparameter[int]):
-    """Integer hyperparameter"""
-    def __init__(self, default: Maybe[int] = Maybe(), description: str|None = None):
-        super().__init__(int, default, description)
-class FloatHyperparameter(Hyperparameter[float]):
-    """Float hyperparameter"""
-    def __init__(self, default: Maybe[float] = Maybe(), description: str|None = None):
-        super().__init__(float, default, description)
+class Unspecified(metaclass=SingletonMeta):
+    pass
 
-@dataclass_transform(kw_only_default=True, field_specifiers=(Hyperparameter, ))
-class BackBone(nn.Module):
+def hyperparameter(type, default=Maybe(), description: str|None = None) -> Any:
+    return Hyperparameter(type, default=default, description=description)
+def int_hyperparameter(default=Maybe(), description: str|None = None) -> int:
+    return hyperparameter(int, default=default, description=description)
+def float_hyperparameter(default=Maybe(), description: str|None = None) -> float:
+    return hyperparameter(float, default=default, description=description)
+
+def model_attribute(*, init=False) -> Any:
+    """used to specify that a model attribute is not a hyperparameter"""
+    del init
+    return Unspecified()
+
+class BackBoneMeta(type):
+    def __new__(cls, name, bases, namespace, **kwds):
+        assert "_required_model_attributes" not in namespace
+        namespace_content = list(namespace.items())
+        _required_model_attributes = set()
+        for k, v in namespace_content:
+            if v is Unspecified(): 
+                del namespace[k]
+                _required_model_attributes.add(k)
+        namespace["_required_model_attributes"] = _required_model_attributes
+        return super(BackBoneMeta, cls).__new__(cls, name, bases, namespace, **kwds)
+            
+
+@dataclass_transform(kw_only_default=True, field_specifiers=(hyperparameter, int_hyperparameter, float_hyperparameter))
+class BackBone(nn.Module, metaclass=BackBoneMeta):
     """Base class for backbone models
 
     parser = ArgumentParser()
@@ -52,15 +75,32 @@ class BackBone(nn.Module):
         - a set of hyperparameters
         - learnable parameters
     """
+
+    _required_model_attributes: ClassVar[set[str]]
     
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs ):
         super().__init__()
-        self.set_hyperparameters(**kwargs)
+        # self._model_attributes = model_attributes
+        default_attributes = set(vars(self))
+        self.set_hyperparameters(kwargs)
         self.__setup__()
+        self.check_initialized(default_attributes)
 
     def __setup__(self):
         """Setup the backbone"""
         pass
+
+    def check_initialized(self, default_attributes):
+        hyperparams = set(self.list_hyperparameters())
+        for k in self._required_model_attributes:
+            if k in vars(self):
+                raise ValueError(f"{self.__class__.__name__}: attribute {k} was not in __setup__")
+        for k in vars(self):
+            # if k == "transformer": import pdb;pdb.set_trace()
+            if k not in hyperparams and k not in self._required_model_attributes:
+                log.warn(f"{self.__class__.__name__}: attribute {k} was set in __setup__"
+                         "but not declared in type hints")
+
 
 
     @overload
@@ -143,7 +183,7 @@ class BackBone(nn.Module):
         hyperparameters = self.fill_hyperparameters_with_defaults(kwargs)
         model_name = self.__class__.__name__
         check_parameters(required=self.list_hyperparameters(), 
-                         provided=hyperparameters.keys,
+                         provided=hyperparameters.keys(),
                          missing_message=f"Missing hyperparameters for {model_name}", 
                          extra_message=f"Extra hyperparameters for {model_name}", 
                          wrong_message=f"Wrong hyperparameters for {model_name}", 
@@ -195,3 +235,4 @@ class BackBone(nn.Module):
             kwargs[attr_name] = getattr(args, dest)
         return cls(**kwargs)
 
+    

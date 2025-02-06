@@ -3,8 +3,8 @@
 This module provides neural networks for geometry tasks.
 """
 
-from .backbone import BackBone, IntHyperparameter, FloatHyperparameter
+from .backbone import BackBone, hyperparameter, int_hyperparameter, float_hyperparameter
 from .model import EncoderDecoder, Model
 
-__all__ = ["BackBone", "EncoderDecoder", "Model", "IntHyperparameter", 
-           "FloatHyperparameter"]
+__all__ = ["BackBone", "EncoderDecoder", "Model", "hyperparameter", "int_hyperparameter", 
+           "float_hyperparameter"]

@@ -101,15 +101,18 @@ class Model(pl.LightningModule):
     ####### training parameters
     batch_size: int
     learning_rate: float
+    debug_mode: bool # disables a bunch of optimizations
 
     def __init__(self, backbone: BackBone, task: "Task", 
-                 batch_size: int, learning_rate: float):
+                 batch_size: int, learning_rate: float, 
+                 debug_mode=False):
         super().__init__()
         self.backbone = backbone
         self.encoder_decoder = task.get_encoder_decoder(backbone)
         self.task = task
         self.batch_size = batch_size
         self.learning_rate = learning_rate
+        self.debug_mode = debug_mode
 
     def forward(self, batch: Datapoint) -> Any:
         """Forward pass of the model"""
@@ -139,13 +142,13 @@ class Model(pl.LightningModule):
 
     def train_dataloader(self):
         """Get the training dataloader"""
-        return self.task.get_dataloader("train", self.batch_size)
+        return self.task.get_dataloader("train", self.batch_size, no_workers=self.debug_mode)
 
     def val_dataloader(self):
         """Get the training dataloader"""
-        return self.task.get_dataloader("val", self.batch_size)
+        return self.task.get_dataloader("val", self.batch_size, no_workers=self.debug_mode)
 
     def test_dataloader(self):
         """Get the training dataloader"""
-        return self.task.get_dataloader("test", self.batch_size)
+        return self.task.get_dataloader("test", self.batch_size, no_workers=self.debug_mode)
 

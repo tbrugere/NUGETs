@@ -1,27 +1,29 @@
-from torch_heterogeneous_batching.nn.transformer import Transformer_nn
+from torch_heterogeneous_batching.nn.transformer import Transformer as Transformer_nn
 
-from nugets.models.backbone import BackBone, IntHyperparameter
+from nugets.models.backbone import BackBone, int_hyperparameter, model_attribute
 
 
 class Transformer(BackBone):
     """Transformer backbone"""
 
-    n_heads: IntHyperparameter
-    n_layers: IntHyperparameter
-    d_model: IntHyperparameter
+    n_heads: int = int_hyperparameter(description="number of heads for the self-attentions")
+    n_layers: int = int_hyperparameter(description="number of layers")
+    d_model: int = int_hyperparameter(description="number of dimensions of the input and the output")
     
-    key_dim: IntHyperparameter
-    feed_forward_hidden_dim: IntHyperparameter
+    key_dim: int = int_hyperparameter(description="number of dimensions for key, query"
+                                 " and values in attention mechanism")
+    feed_forward_hidden_dim: int = int_hyperparameter(description="number of hidden dimensions"
+                                 " in feed-forward blocks")
 
-    transformer: Transformer_nn
+    transformer: Transformer_nn = model_attribute()
 
     def __setup__(self):
         self.transformer = Transformer_nn(
             n_heads=self.n_heads,
             n_layers=self.n_layers,
-            d_model=self.d_model,
+            input_dim=self.d_model,
             key_dim=self.key_dim,
-            feed_forward_hidden_dim=self.feed_forward_hidden_dim,
+            hidden_dim=self.feed_forward_hidden_dim,
         )
 
     def forward(self, batch, return_reg_loss=False):
