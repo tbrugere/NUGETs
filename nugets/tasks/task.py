@@ -1,11 +1,15 @@
 from typing import Literal
-import warnings
+from base64 import b64encode
+import hashlib
+from io import BytesIO
 from logging import getLogger
 from pathlib import Path
+import warnings
 
 from ml_lib.datasets import Dataset
 
 from nugets.datasets import get_dataset_register
+from nugets.misc import dict_to_bytes
 
 log = getLogger(__name__)
 
@@ -20,11 +24,13 @@ class Task():
         self.dataset_name = dataset
         self.dataset_parameters = dataset_parameters
 
-    def __hash__(self):
+    def consistent_hash(self) -> bytes:
         """Hash the task"""
-        name_hash = hash(self.dataset_name)
-        parameters_hash = hash(frozenset(self.dataset_parameters.items()))
-        return hash((name_hash, parameters_hash))
+        b = BytesIO()
+        b.write(self.dataset_name.encode())
+        b.write(bytes(1))
+        b.write(dict_to_bytes(self.dataset_parameters))
+        return hashlib.sha256(b.getvalue()).digest()
 
     """
     Dataset processing
@@ -51,8 +57,9 @@ class Task():
     def get_cached_processed_dataset_path(self, which: Literal["train", "val", "test"]) -> Path:
         """Get the path to the cached processed dataset"""
         task_name = self.__class__.__name__
-        task_hash = hash(self)
-        return Path(f"workdir/datasets/processed/{task_name}_{task_hash}_{which}.tar")
+        task_hash: bytes = self.consistent_hash()
+        task_hash_b64: str = b64encode(task_hash, altchars=b':-').decode()
+        return Path(f"workdir/datasets/processed/{task_name}_{task_hash_b64}_{which}.tar")
 
     def cache_processed_dataset(self, which: Literal["train", "val", "test"], 
                                 skip_if_exists=False):
@@ -92,6 +99,7 @@ class Task():
             return self._processed_datasets[which]
         cached_dataset_path = self.get_cached_processed_dataset_path(which)
         if not cached_dataset_path.exists():
+            log.info(f"{which} dataset has not been precomputed yet, precomputing")
             self.cache_processed_dataset(which)
 
         self._processed_datasets[which] = self.get_cached_processed_dataset(which)

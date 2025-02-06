@@ -97,8 +97,10 @@ class BackBone(nn.Module, metaclass=BackBoneMeta):
                 raise ValueError(f"{self.__class__.__name__}: attribute {k} was not in __setup__")
         for k in vars(self):
             # if k == "transformer": import pdb;pdb.set_trace()
-            if k not in hyperparams and k not in self._required_model_attributes:
-                log.warn(f"{self.__class__.__name__}: attribute {k} was set in __setup__"
+            if k in hyperparams: continue
+            if k in self._required_model_attributes: continue
+            if k in default_attributes : continue
+            log.warn(f"{self.__class__.__name__}: attribute {k} was set in __setup__"
                          "but not declared in type hints")
 
 

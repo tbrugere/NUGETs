@@ -2,6 +2,9 @@
 
 from typing import Any, Callable, TypeVar, Protocol, ParamSpec
 from argparse import ArgumentParser
+import functools as ft
+from io import BytesIO
+from json import dumps as json_dumps
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -20,7 +23,7 @@ def take_argument_annotation_from(this: Callable[P, Any]) \
         return_type ={"return": real_function.__annotations__["return"]} if "return" in real_function.__annotations__ else {}
         real_function.__annotations__ = {**this.__annotations__, **return_type}
         return real_function #type: ignore 
-    return decorator
+    return decorator #type: ignore
 
 class CreateArgumentParserReturnSignature(Protocol): #noqa: D101
     def __call__(self, parser: ArgumentParser|None = None) -> ArgumentParser: ... #noqa: D102
@@ -76,3 +79,26 @@ def create_argument_parser(**argparse_kwargs) \
             return parser
         return wrapper
     return decorator
+
+def dict_to_bytes(d: dict[str, Any]):
+    """
+
+    Takes a dict where keys are strings, and values are jsonable, 
+    and outputs an order-independent set of bytes for hashing purposes
+
+    """
+
+    res = BytesIO()
+
+    tuples = [(k, v) for k, v in d.items()]
+    tuples.sort()
+
+    dumps = ft.partial(json_dumps, separators=(',', ':'), sort_keys=True)
+
+    for k, v in tuples:
+        res.write(k.encode())
+        res.write(bytes(1))
+        res.write(dumps(v).encode())
+        res.write(bytes(1))
+
+    return res.getvalue()
