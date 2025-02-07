@@ -12,6 +12,7 @@ log = getLogger(__name__)
 if TYPE_CHECKING:
     from argparse import ArgumentParser, Namespace
 
+
 T = TypeVar('T')
 
 @dataclass
@@ -30,6 +31,86 @@ class Hyperparameter(Generic[T]):
         """Parse the hyperparameter value from a string"""
         return self.type(val)
 
+    def get_dest(self, attr_name):
+        return attr_name
+
+    def add_argparse_arguments(self, group, attr_name):
+        attr_name_arg = attr_name.replace("_", "-")
+        argument = f"---{attr_name_arg}"
+
+        optional = not self.default.is_empty
+        dest = self.get_dest(attr_name)
+
+        if optional:
+            group.add_argument(argument, type=self.type,
+                                dest=dest, default=self.default.value,
+                                optional=True,
+                                help=self.description)
+        else:
+            group.add_argument(argument, type=t.type,
+                            dest=dest, optional=False,
+                            help=self.description)
+
+    def read_argparse_arguments(self, namespace, attr_name):
+        dest = self.get_dest(attr_name)
+        val = getattr(namespace, dest)
+        return val
+
+@dataclass
+class InnerBackbone():
+    t: "type[BackBone]"
+    params: "Namespace"
+
+    def load(self):
+        raise NotImplementedError
+
+
+class OtherBackboneHyperparameter(Hyperparameter[InnerBackbone]):
+    """Hyperparameter that loads parameters for another backbone"""
+    type = InnerBackbone
+    description: str|None = None
+
+    def __init__(self, description: str|None = None):
+        self.type = InnerBackbone
+        self.description = description
+    
+    def validate(self, val: InnerBackbone):
+        # val_copy = {**val}
+        # if "backbone" not in val_copy:
+        #     raise ValueError("need a backbone type specified for the sub-model")
+        val.t.check_argparse_parameters(val.params)
+
+    def add_argparse_arguments(self, group, attr_name):
+        from nugets.models.backbones import get_backbones_register
+        register = get_backbones_register()
+        attr_name_arg = attr_name.replace("_", "-")
+
+        dest_group = self.get_dest(attr_name)
+        subgroup = group.add_argument_group(title=f"{attr_name} parameters", 
+                            prefix=attr_name_arg, dest_group=dest_group)
+
+
+        def add_backbone_parameters(args):
+            backbone_name = args.backbone
+            backbone_type = register[backbone_name]
+            backbone_type.argument_parser(subgroup)
+
+
+        subgroup.add_argument("--backbone", type=str, 
+                              choices=list(register),
+                              update=add_backbone_parameters)
+
+
+    def read_argparse_arguments(self, namespace, attr_name):
+        from nugets.models.backbones import get_backbones_register
+        register = get_backbones_register()
+        dest = self.get_dest(attr_name)
+        sub_namespace = getattr(namespace, dest)
+        backbone_name = sub_namespace.backbone
+        backbone_type = register[backbone_name]
+        return InnerBackbone(backbone_type, sub_namespace)
+
+
 class Unspecified(metaclass=SingletonMeta):
     pass
 
@@ -39,6 +120,7 @@ def int_hyperparameter(default=Maybe(), description: str|None = None) -> int:
     return hyperparameter(int, default=default, description=description)
 def float_hyperparameter(default=Maybe(), description: str|None = None) -> float:
     return hyperparameter(float, default=default, description=description)
+# def other_backbone_hyperparameter(default=)
 
 def model_attribute(*, init=False) -> Any:
     """used to specify that a model attribute is not a hyperparameter"""
@@ -195,37 +277,10 @@ class BackBone(nn.Module, metaclass=BackBoneMeta):
             setattr(self, k, hyperparameters[k])
 
     @classmethod
-    def get_argparse_argument(cls, attr_name: str, hyperparameter: Hyperparameter)\
-            -> str:
-        """Get the argparse argument for a hyperparameter"""
-        backbone_name = cls.__name__.lower()
-        attr_name_arg = attr_name.replace("_", "-")
-        argument = f"--{backbone_name}-{attr_name_arg}"
-        return argument
-
-    @classmethod
-    def get_argarse_dest(cls, attr_name: str) -> str:
-        """Get the argparse destination for a hyperparameter"""
-        return f"backbone_{attr_name}"
-
-    @classmethod
-    def argument_parser(cls, parser: "ArgumentParser") -> "ArgumentParser":
+    def argument_parser(cls, parser,):
         """Add hyperparameters to the argument parser"""
-        backbone_name = cls.__name__.lower()
-        group = parser.add_argument_group(f"{backbone_name} hyperparameters")
         for attr_name, t in cls.list_hyperparameters(return_types=True):
-            optional = not t.default.is_empty
-            argument = cls.get_argparse_argument(attr_name, t)
-            dest = cls.get_argarse_dest(attr_name)
-            if optional:
-                group.add_argument(argument, type=t.type,
-                                    dest=dest, default=t.default.value,
-                                    optional=True,
-                                    help=t.description)
-            else:
-                group.add_argument(argument, type=t.type,
-                                dest=dest, optional=False,
-                                help=t.description)
+            t.add_argparse_arguments(parser, attr_name)
         return parser
     
     @classmethod
@@ -233,8 +288,7 @@ class BackBone(nn.Module, metaclass=BackBoneMeta):
         """Create a backbone from arguments"""
         kwargs = {}
         for attr_name, t in cls.list_hyperparameters(return_types=True):
-            dest = cls.get_argarse_dest(attr_name)
-            kwargs[attr_name] = getattr(args, dest)
+            kwargs[attr_name] = t.read_argparse_arguments(args, attr_name)
         return cls(**kwargs)
 
     
