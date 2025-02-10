@@ -9,10 +9,12 @@ authors = [{name="Tristan Brugère",  email="<67050900+tbrugere@users.noreply.gi
 dependencies = [
     "lightning>=2.5.0.post0",
     "ml-lib",
-    "torch-heterogeneous-batching", 
+    "torch-heterogeneous-batching",
     "torch>=2.5.1",
-    "torch_scatter", 
-    "torch_geometric", 
+    "torch_scatter",
+    "torch_geometric",
+    "pot>=0.9.5",
+    "geomloss>=0.2.6",
 ]
 
 [dependency-groups]
