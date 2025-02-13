@@ -152,3 +152,19 @@ class Model(pl.LightningModule):
         """Get the training dataloader"""
         return self.task.get_dataloader("test", self.batch_size, no_workers=self.debug_mode)
 
+
+    @classmethod
+    def argument_parser(cls, parser):
+        from nugets.models.backbones import get_backbones_register
+        backbone_register = get_backbones_register()
+        """Adds the ability to load a Model class to a parser"""
+        def add_backbone_parameters(args):
+            backbone_name = args.backbone
+            backbone_type = register[backbone_name]
+            backbone_type.argument_parser(parser)
+
+        parser.add_argument("--task", type=str, required=True, help="The task to train on")
+        parser.add_argument("--backbone", type=str, required=True, help="The backbone to use", update=add_backbone_parameters, options=backbone_register.values())
+        parser.add_argument("--batch-size", type=int, required=True, help="The batch size")
+        parser.add_argument("--learning-rate", type=float, required=True, help="The learning rate")
+        return parser

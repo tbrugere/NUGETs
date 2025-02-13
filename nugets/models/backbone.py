@@ -36,7 +36,7 @@ class Hyperparameter(Generic[T]):
 
     def add_argparse_arguments(self, group, attr_name):
         attr_name_arg = attr_name.replace("_", "-")
-        argument = f"---{attr_name_arg}"
+        argument = f"--{attr_name_arg}"
 
         optional = not self.default.is_empty
         dest = self.get_dest(attr_name)
@@ -120,7 +120,8 @@ def int_hyperparameter(default=Maybe(), description: str|None = None) -> int:
     return hyperparameter(int, default=default, description=description)
 def float_hyperparameter(default=Maybe(), description: str|None = None) -> float:
     return hyperparameter(float, default=default, description=description)
-# def other_backbone_hyperparameter(default=)
+def other_backbone_hyperparameter(description: str|None = None) -> InnerBackbone:
+    return OtherBackboneHyperparameter(description=description)#type: ignore
 
 def model_attribute(*, init=False) -> Any:
     """used to specify that a model attribute is not a hyperparameter"""
@@ -140,7 +141,7 @@ class BackBoneMeta(type):
         return super(BackBoneMeta, cls).__new__(cls, name, bases, namespace, **kwds)
             
 
-@dataclass_transform(kw_only_default=True, field_specifiers=(hyperparameter, int_hyperparameter, float_hyperparameter))
+@dataclass_transform(kw_only_default=True, field_specifiers=(hyperparameter, int_hyperparameter, float_hyperparameter, other_backbone_hyperparameter))
 class BackBone(nn.Module, metaclass=BackBoneMeta):
     """Base class for backbone models
 

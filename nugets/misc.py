@@ -28,61 +28,6 @@ def take_argument_annotation_from(this: Callable[P, Any]) \
         return real_function #type: ignore 
     return decorator #type: ignore
 
-class CreateArgumentParserReturnSignature(Protocol): #noqa: D101
-    def __call__(self, parser: ArgumentParser|None = None) -> ArgumentParser: ... #noqa: D102
-
-@take_argument_annotation_from(ArgumentParser)
-def create_argument_parser(**argparse_kwargs) \
-        -> Callable[[Callable[[ArgumentParser], None]], 
-                    CreateArgumentParserReturnSignature]:
-    """Decorator that potentially creates an argument parser and passes it down
-
-    This is a helper function that allows to have a function that either
-
-    - populates an already existing parser 
-        (if passed as argument, generally for use with subparsers)
-    - creates an all new parser
-
-    It decorates a function that takes a single argument, an ArgumentParser, 
-    and populates it.
-
-    usage:
-
-    .. code-block:: python
-
-        # @create_argument_parser
-        # accepts all the arguments of ArgumentParser. 
-        # They will be passed to the ArgumentParser constructor 
-        # if a new parser is created
-        @create_argument_parser(description="This is the description") 
-        def my_argument_parser(parser: ArgumentParser):
-            parser.add_argument("--my-arg", help="This is the help")
-
-        specific_parser = my_argument_parser()
-        # or
-        parser = ArgumentParser()
-        subparsers = parser.add_subparsers()
-        my_argument_parser(subparsers.add_parser("my_subcommand"))
-
-    .. note:: 
-
-        The input function should only take a single argument parser, 
-        and does not need to return anything. 
-        The output function will return the parser.
-
-    """
-
-    def decorator(func: Callable[[ArgumentParser], None]) \
-            -> CreateArgumentParserReturnSignature:
-        @ft.wraps(func)
-        def wrapper(parser: ArgumentParser|None = None) -> ArgumentParser:
-            if parser is None:
-                parser = ArgumentParser(**argparse_kwargs)
-            func(parser)
-            return parser
-        return wrapper
-    return decorator
-
 class Nestedspace(argparse.Namespace):
     def __setattr__(self, name, value):
         if '.' in name:
@@ -220,6 +165,61 @@ class NamespacedArgumentGroup(_ArgumentGroup):
         return group
 
 
+class CreateArgumentParserReturnSignature(Protocol): #noqa: D101
+    def __call__(self, parser: CustomArgumentParser|None = None) -> CustomArgumentParser: ... #noqa: D102
+
+@take_argument_annotation_from(ArgumentParser)
+def create_argument_parser(**argparse_kwargs) \
+        -> Callable[[Callable[[ArgumentParser], None]], 
+                    CreateArgumentParserReturnSignature]:
+    """Decorator that potentially creates an argument parser and passes it down
+
+    This is a helper function that allows to have a function that either
+
+    - populates an already existing parser 
+        (if passed as argument, generally for use with subparsers)
+    - creates an all new parser
+
+    It decorates a function that takes a single argument, an ArgumentParser, 
+    and populates it.
+
+    usage:
+
+    .. code-block:: python
+
+        # @create_argument_parser
+        # accepts all the arguments of ArgumentParser. 
+        # They will be passed to the ArgumentParser constructor 
+        # if a new parser is created
+        @create_argument_parser(description="This is the description") 
+        def my_argument_parser(parser: ArgumentParser):
+            parser.add_argument("--my-arg", help="This is the help")
+
+        specific_parser = my_argument_parser()
+        # or
+        parser = ArgumentParser()
+        subparsers = parser.add_subparsers()
+        my_argument_parser(subparsers.add_parser("my_subcommand"))
+
+    .. note:: 
+
+        The input function should only take a single argument parser, 
+        and does not need to return anything. 
+        The output function will return the parser.
+
+    """
+
+    def decorator(func: Callable[[ArgumentParser], None]) \
+            -> CreateArgumentParserReturnSignature:
+        @ft.wraps(func)
+        def wrapper(parser: CustomArgumentParser|None = None) -> CustomArgumentParser:
+            if parser is None:
+                parser = CustomArgumentParser(**argparse_kwargs)
+            func(parser)
+            return parser
+        return wrapper
+    return decorator
+
 def dict_to_bytes(d: dict[str, Any]):
     """
 
@@ -257,3 +257,4 @@ def import_submodules(package, recursive=True):
         if recursive and is_pkg:
             results.update(_import_submodules(full_name))
     return results
+
