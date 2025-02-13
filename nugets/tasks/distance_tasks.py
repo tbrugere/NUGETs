@@ -90,7 +90,12 @@ class DistanceTask(Task):
 class WassersteinDistanceTask(DistanceTask):
     def distance(self, set1, set2, p=1, sinkhorn=0):
         """Compute the p-Wasserstein distance between two sets"""
+
+        M = ot.dist(set1, set2, metric='euclidean')**p
+        sz_a = len(set1)
+        sz_b = len(set2)
+        a = np.ones(sz_a)/sz_a
+        b = np.ones(sz_b)/sz_b
         if sinkhorn > 0:
-            ot.sinkhorn2()
-        ot.emd2()
-        return 0
+            return ot.sinkhorn2(a, b, M, reg=sinkhorn)
+        return ot.emd2(a, b, M)**(1/p)
