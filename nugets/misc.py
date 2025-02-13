@@ -3,11 +3,21 @@
 from typing import Any, Callable, TypeVar, Protocol, ParamSpec
 import argparse
 from argparse import ArgumentParser, _ArgumentGroup
+from gettext import gettext as _
 import functools as ft
 from io import BytesIO
 import importlib
+from inspect import signature
 from json import dumps as json_dumps
 import pkgutil
+from logging import getLogger
+import logging
+from pathlib import Path
+import sys
+
+log = getLogger(__name__)
+log.setLevel(logging.DEBUG)
+log.addHandler(logging.StreamHandler(sys.stdout))
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -38,12 +48,49 @@ class Nestedspace(argparse.Namespace):
         else:
             self.__dict__[name] = value
 
+    def __getattr__(self, name):
+        if '.' in name:
+            group,name = name.split('.',1)
+            ns = getattr(self, group, Nestedspace())
+            return getattr(ns, name)
+        else:
+            return super().__getattr__(name)
+
+
+class CustomHelpAction(argparse._HelpAction):
+    def __call__(self, parser, namespace, values, option_string=None):
+        parser.should_print_help = True
+
+class RetryException(Exception):
+    pass
+
 class CustomArgumentParser(argparse.ArgumentParser):
+    """
+    Known bugs: 
+        - if using --help, and some required arguments are missing at a higher level, not all updates will be processed, so not all possible arguments will be shown
+        Solution to that would be to prevent exiting on unseen argument if there are still updates to be taken, but that is for sure a pain
+
+    """
     updates: list[Callable]
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        bound_args = signature(argparse.ArgumentParser).bind(*args, **kwargs)
+        bound_args.apply_defaults()
+        add_help = bound_args.arguments["add_help"]
+        bound_args.arguments["add_help"] = False
+        super().__init__(*bound_args.args, **bound_args.kwargs)
+        self.register('action', 'help', CustomHelpAction)
+        if add_help:
+            prefix_chars = self.prefix_chars
+            default_prefix = '-' if '-' in prefix_chars else prefix_chars[0]
+            self.add_argument(
+                default_prefix+'h', default_prefix*2+'help',
+                action='help', default=argparse.SUPPRESS,
+                help=_('show this help message and exit'))
+
+        self.should_print_help = False
         self.updates = []
+        self._retry_on_error = False
         
 
     def add_argument_group(self, *args, prefix=None, dest_group=None, **kwargs):
@@ -51,32 +98,122 @@ class CustomArgumentParser(argparse.ArgumentParser):
         self._action_groups.append(group)
         return group
 
+    def add_subparsers(self, **kwargs):
+        if "parser_class" not in kwargs:
+            kwargs["parser_class"] = self.__class__
+        return super().add_subparsers(**kwargs)
+
     def _pop_action_class(self, kwargs, default=None):
         return AddsUpdateAction.pop_action_class(self, kwargs, default)
 
     def parse_args(self, args=None, namespace=None):
+        try:
+            return super().parse_args(args, namespace)
+        except argparse.ArgumentError:
+            self._eventually_print_help(self._current_namespace)
+            raise
+
+    def _eventually_print_help(self, namespace):
+        # called in a situation when about to finish parsing. 
+        # (whether cleanly or on error)
+        # If it was asked by arguments to print help, do that instead of returning/failing
+        if not self.should_print_help: return
+        self.run_updates(namespace)
+        self.print_help()
+        self.exit()
+
+    def error(self, message, dontretry=False):
+        if getattr(self, "_retry_on_error", False) and not dontretry:
+            self._error_message = message
+            raise RetryException
+        self._eventually_print_help(self._current_namespace)
+        return super().error(message)
+
+    def previous_error(self):
+        previous_error = getattr(self, "_error_message", None)
+        if previous_error is not None:
+            self.error(previous_error, dontretry=True)
+        
+
+    def parse_known_args(self, args=None, namespace=None):
         if namespace is None: namespace = Nestedspace()
-        namespace, argv= self.parse_known_args(args, namespace)
-        while argv:
-            if not self.updates: 
-                msg = ('unrecognized arguments: %s') % ' '.join(argv)
-                if self.exit_on_error:
-                    self.error(msg)
-                else:
-                    raise argparse.ArgumentError(None, msg)
-            while self.updates:
-                update = self.updates.pop()
-                update(namespace)
-            namespace, argv= self.parse_known_args(argv, namespace)
-        return namespace
+        self._retry_on_error = True
+        self._current_namespace = namespace # kinda hacky, making the class more stateful
+        # needed for accessing the namespace on error
+        self.should_print_help = False
+        try:
+            self._error_message = None
+            namespace, unconsumed_args = super().parse_known_args(args, namespace)
+        except RetryException:
+            unconsumed_args = args
+        while unconsumed_args:
+            ran_updates = self.run_updates(namespace)
+            if not ran_updates: 
+                self.previous_error()
+                return namespace, unconsumed_args
+            self._error_message = None
+            namespace, unconsumed_args = super().parse_known_args(args, namespace)
+
+        self._eventually_print_help(namespace)
+        return namespace, unconsumed_args
+
+    # def _parse_known_args2(self, args, namespace, intermixed):
+    #     if namespace is None: namespace = Nestedspace()
+    #     self._current_namespace = namespace # kinda hacky, making the class more stateful
+    #     return super()._parse_known_args2(args, namespace, intermixed)
+
+    def format_help(self):
+        formatter = self._get_formatter()
+
+        # usage
+        formatter.add_usage(self.usage, self._actions,
+                            self._mutually_exclusive_groups)
+
+        # description
+        formatter.add_text(self.description)
+
+        def format_group(action_group):
+            formatter.start_section(action_group.title)
+            formatter.add_text(action_group.description)
+            formatter.add_arguments(action_group._group_actions)
+            for subgroup in action_group._action_groups:
+                format_group(subgroup)
+            formatter.end_section()
+
+        # positionals, optionals and user-defined groups
+        for action_group in self._action_groups:
+            format_group(action_group)
+
+        # epilog
+        formatter.add_text(self.epilog)
+
+        # determine help from format above
+        return formatter.format_help()
+
+
+
+    def run_updates(self, namespace):
+        """Runs all pending updates.
+        Returns:
+            True if any update was run, False otherwise
+        """
+        if not self.updates: return False
+        while self.updates:
+            update = self.updates.pop()
+            update(namespace)
+        return True
+
 
     def register_update(self, update):
         self.updates.append(update)
 
-class AddsUpdateAction(argparse.Action):
 
+
+class AddsUpdateAction(argparse.Action):
     inner_action: argparse.Action
     update: Callable
+    already_ran: bool
+    already_registered: bool
 
     namespace_scope: str|None
 
@@ -85,9 +222,13 @@ class AddsUpdateAction(argparse.Action):
         self.inner_action = inner_action_class(*args, **kwargs)
         self.update = update
         self.namespace_scope = namespace_scope
+        self.already_ran = False
+        self.already_registered = False
 
     def __call__(self, parser, namespace, values, option_string=None):
-        parser.register_update(self.scoped_update)#type: ignore
+        if not self.already_registered:
+            parser.register_update(self.scoped_update)#type: ignore
+            self.already_registered=True
         return self.inner_action(parser, namespace, values, option_string=option_string)
 
     def __getattr__(self, attr_name):
@@ -99,6 +240,8 @@ class AddsUpdateAction(argparse.Action):
         return setattr(self.inner_action, attr_name, value)
 
     def scoped_update(self, namespace):
+        if self.already_ran: log.warn("update ran twice, this shouldn't happen")
+        self.already_ran = True
         if self.namespace_scope:
             scoped_namespace = getattr(namespace, self.namespace_scope)
         else: scoped_namespace = namespace
@@ -258,3 +401,36 @@ def import_submodules(package, recursive=True):
             results.update(_import_submodules(full_name))
     return results
 
+
+def configure_logging(packages, loglevel, logfile=None): 
+    """Configures the logging for the program
+
+    Enables logging (either to stderr or to a file) for the following packages:
+
+    - autocommit
+    - basic_rag
+    - mistral_tools
+
+    with the specified log level
+
+    Args:
+        loglevel (int): The log level
+        logfile (Path, optional): The file to log to. Defaults to None.
+    """
+    if logfile is not None:
+        logfile = Path(logfile)
+        logfile.parent.mkdir(exist_ok=True, parents=True)
+        if loglevel > logging.INFO:
+            loglevel = logging.INFO
+    log.setLevel(loglevel)
+    formatter = logging.Formatter(
+            '%(asctime)s:%(levelname)s:%(name)s:%(message)s', 
+            datefmt='%H:%M:%S')
+    if logfile is not None:
+        handler = logging.FileHandler(logfile)
+    else:
+        handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
+    for package in packages:
+        our_log = getLogger(package)
+        our_log.addHandler(handler)

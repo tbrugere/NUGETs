@@ -27,8 +27,9 @@ dev = [
     "git-autocommit-hook>=0.1.2",
     "ruff>=0.9.3",
     "ruff-lsp>=0.0.60",
-    "neovim",
-    "setuptools" # required to build torch_scatter and neovim
+    "neovim", # required to build torch_scatter and neovim
+    "setuptools",
+    "ipython>=8.32.0",
 ]
 test = [
     "pytest>=8.3.4",

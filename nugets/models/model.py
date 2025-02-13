@@ -156,15 +156,37 @@ class Model(pl.LightningModule):
     @classmethod
     def argument_parser(cls, parser):
         from nugets.models.backbones import get_backbones_register
+        from nugets.datasets import get_dataset_register
         backbone_register = get_backbones_register()
+        dataset_register = get_dataset_register()
         """Adds the ability to load a Model class to a parser"""
-        def add_backbone_parameters(args):
-            backbone_name = args.backbone
-            backbone_type = register[backbone_name]
-            backbone_type.argument_parser(parser)
 
-        parser.add_argument("--task", type=str, required=True, help="The task to train on")
-        parser.add_argument("--backbone", type=str, required=True, help="The backbone to use", update=add_backbone_parameters, options=backbone_register.values())
-        parser.add_argument("--batch-size", type=int, required=True, help="The batch size")
-        parser.add_argument("--learning-rate", type=float, required=True, help="The learning rate")
+        task_group = parser.add_argument_group(title="Task", prefix=None, dest_group="task")
+        backbone_group = parser.add_argument_group(title="Backbone", prefix="backbone", dest_group="backbone")
+        training_param_group = parser.add_argument_group(title="Training parameters", prefix=None, dest_group="train")
+
+        def add_backbone_parameters(args):
+            backbone_name = args.type
+            backbone_type = backbone_register[backbone_name]
+            backbone_type.argument_parser(backbone_group)
+
+
+        task_group.add_argument("--task", type=str, required=True, help="The task to train on")
+        task_group.add_argument("--dataset", type=str, required=True, help="The dataset to train on", choices=dataset_register.keys())
+        backbone_group.add_argument("--type", type=str, required=True, help="The backbone to use", update=add_backbone_parameters, choices=backbone_register.keys())
+        training_param_group.add_argument("--batch-size", type=int, required=True, help="The batch size")
+        training_param_group.add_argument("--learning-rate", type=float, required=True, help="The learning rate")
         return parser
+
+    @classmethod
+    def from_args(cls, args):
+        from nugets.models.backbones import get_backbones_register
+        backbone_register = get_backbones_register()
+        dataset_register = 
+        backbone_name = args.backbone.type
+        backbone_type = backbone_register[backbone_name]
+        backbone = backbone_type.from_args(args.backbone)
+
+
+        raise NotImplementedError
+

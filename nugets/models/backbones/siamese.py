@@ -4,8 +4,10 @@ from torch import nn
 
 from nugets.models.backbone import (BackBone, int_hyperparameter, 
                 model_attribute, hyperparameter,  other_backbone_hyperparameter, InnerBackbone)
+from nugets.models.backbones.register import register
 
 
+@register
 class CoupledNetwork(BackBone):
     """
     Siamese network backbone
@@ -78,4 +80,4 @@ class CoupledNetwork(BackBone):
         return (self.encoder1.get_output_dim(), self.encoder2.get_output_dim())
 
 class Siamese(CoupledNetwork):
-
+    pass

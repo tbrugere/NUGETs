@@ -44,11 +44,11 @@ class Hyperparameter(Generic[T]):
         if optional:
             group.add_argument(argument, type=self.type,
                                 dest=dest, default=self.default.value,
-                                optional=True,
+                                required=False,
                                 help=self.description)
         else:
-            group.add_argument(argument, type=t.type,
-                            dest=dest, optional=False,
+            group.add_argument(argument, type=self.type,
+                            dest=dest, required=True,
                             help=self.description)
 
     def read_argparse_arguments(self, namespace, attr_name):
@@ -62,7 +62,7 @@ class InnerBackbone():
     params: "Namespace"
 
     def load(self):
-        raise NotImplementedError
+        return self.t.from_args(self.params)
 
 
 class OtherBackboneHyperparameter(Hyperparameter[InnerBackbone]):
@@ -75,10 +75,8 @@ class OtherBackboneHyperparameter(Hyperparameter[InnerBackbone]):
         self.description = description
     
     def validate(self, val: InnerBackbone):
-        # val_copy = {**val}
-        # if "backbone" not in val_copy:
-        #     raise ValueError("need a backbone type specified for the sub-model")
-        val.t.check_argparse_parameters(val.params)
+        pass # for now
+        # val.t.check_argparse_parameters(val.params)
 
     def add_argparse_arguments(self, group, attr_name):
         from nugets.models.backbones import get_backbones_register
@@ -98,7 +96,8 @@ class OtherBackboneHyperparameter(Hyperparameter[InnerBackbone]):
 
         subgroup.add_argument("--backbone", type=str, 
                               choices=list(register),
-                              update=add_backbone_parameters)
+                              update=add_backbone_parameters, 
+                              required=True)
 
 
     def read_argparse_arguments(self, namespace, attr_name):

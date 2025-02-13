@@ -1,8 +1,9 @@
 from torch_heterogeneous_batching.nn.transformer import Transformer as Transformer_nn
 
 from nugets.models.backbone import BackBone, int_hyperparameter, model_attribute
+from nugets.models.backbones.register import register
 
-
+@register
 class Transformer(BackBone):
     """Transformer backbone"""
 

@@ -1,0 +1,73 @@
+__main__.py train: saw updates
+usage: __main__.py train [-h] --task TASK.TASK --backbone-type
+                         {CoupledNetwork,Transformer} --batch-size
+                         TRAIN.BATCH_SIZE --learning-rate TRAIN.LEARNING_RATE
+                         --backbone-encoder-backbone
+                         {CoupledNetwork,Transformer}
+                         --backbone-decoder-backbone
+                         {CoupledNetwork,Transformer}
+                         --backbone-latent-dimension BACKBONE.LATENT_DIMENSION
+                         --backbone-p BACKBONE.P --backbone-decoder-distance
+                         BACKBONE.DECODER_DISTANCE --backbone-decoder-n-heads
+                         BACKBONE.DECODER.N_HEADS --backbone-decoder-n-layers
+                         BACKBONE.DECODER.N_LAYERS --backbone-decoder-d-model
+                         BACKBONE.DECODER.D_MODEL --backbone-decoder-key-dim
+                         BACKBONE.DECODER.KEY_DIM
+                         --backbone-decoder-feed-forward-hidden-dim
+                         BACKBONE.DECODER.FEED_FORWARD_HIDDEN_DIM
+                         --backbone-encoder-n-heads BACKBONE.ENCODER.N_HEADS
+                         --backbone-encoder-n-layers BACKBONE.ENCODER.N_LAYERS
+                         --backbone-encoder-d-model BACKBONE.ENCODER.D_MODEL
+                         --backbone-encoder-key-dim BACKBONE.ENCODER.KEY_DIM
+                         --backbone-encoder-feed-forward-hidden-dim
+                         BACKBONE.ENCODER.FEED_FORWARD_HIDDEN_DIM
+
+options:
+  -h, --help            show this help message and exit
+
+Task:
+  --task TASK.TASK      The task to train on
+
+Backbone:
+  --backbone-type {CoupledNetwork,Transformer}
+                        The backbone to use
+  --backbone-latent-dimension BACKBONE.LATENT_DIMENSION
+                        dimension of the latent space, set it to 0 to disable
+                        latent
+  --backbone-p BACKBONE.P
+                        L_p distance function
+  --backbone-decoder-distance BACKBONE.DECODER_DISTANCE
+
+  encoder parameters:
+    --backbone-encoder-backbone {CoupledNetwork,Transformer}
+    --backbone-encoder-n-heads BACKBONE.ENCODER.N_HEADS
+                        number of heads for the self-attentions
+    --backbone-encoder-n-layers BACKBONE.ENCODER.N_LAYERS
+                        number of layers
+    --backbone-encoder-d-model BACKBONE.ENCODER.D_MODEL
+                        number of dimensions of the input and the output
+    --backbone-encoder-key-dim BACKBONE.ENCODER.KEY_DIM
+                        number of dimensions for key, query and values in
+                        attention mechanism
+    --backbone-encoder-feed-forward-hidden-dim BACKBONE.ENCODER.FEED_FORWARD_HIDDEN_DIM
+                        number of hidden dimensions in feed-forward blocks
+
+  decoder parameters:
+    --backbone-decoder-backbone {CoupledNetwork,Transformer}
+    --backbone-decoder-n-heads BACKBONE.DECODER.N_HEADS
+                        number of heads for the self-attentions
+    --backbone-decoder-n-layers BACKBONE.DECODER.N_LAYERS
+                        number of layers
+    --backbone-decoder-d-model BACKBONE.DECODER.D_MODEL
+                        number of dimensions of the input and the output
+    --backbone-decoder-key-dim BACKBONE.DECODER.KEY_DIM
+                        number of dimensions for key, query and values in
+                        attention mechanism
+    --backbone-decoder-feed-forward-hidden-dim BACKBONE.DECODER.FEED_FORWARD_HIDDEN_DIM
+                        number of hidden dimensions in feed-forward blocks
+
+Training parameters:
+  --batch-size TRAIN.BATCH_SIZE
+                        The batch size
+  --learning-rate TRAIN.LEARNING_RATE
+                        The learning rate
