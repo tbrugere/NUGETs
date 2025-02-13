@@ -8,6 +8,8 @@ from ml_lib.datasets import Transform, Datapoint
 from torch import Tensor
 from torch_heterogeneous_batching import Batch
 
+import ot
+
 from .task import Task
 
 @dataclass
@@ -86,6 +88,9 @@ class DistanceTask(Task):
         return DistanceDatapoint
 
 class WassersteinDistanceTask(DistanceTask):
-    def distance(self, set1, set2, p=1):
+    def distance(self, set1, set2, p=1, sinkhorn=0):
         """Compute the p-Wasserstein distance between two sets"""
+        if sinkhorn > 0:
+            ot.sinkhorn2()
+        ot.emd2()
         return 0
