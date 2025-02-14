@@ -10,10 +10,12 @@ from torch import Tensor
 from torch_heterogeneous_batching import Batch
 
 from .task import Task
+from .register import register
 from nugets.models.backbone import BackBone
 from nugets.models.encoder_decoders.identity import SetIdentityEncoderDecoder
 
 
+@register
 class SetIdentityTask(Task):
     def process_dataset(self, dataset):
         return dataset

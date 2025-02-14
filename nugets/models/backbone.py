@@ -1,4 +1,4 @@
-from typing import Any, Generic, dataclass_transform, get_type_hints, overload, Literal, TypeVar, Iterator, TYPE_CHECKING, ClassVar
+from typing import Any, Generic, dataclass_transform, get_type_hints, overload, Literal, TypeVar, Iterator, TYPE_CHECKING, ClassVar, Self
 
 from dataclasses import dataclass
 from logging import getLogger
@@ -6,6 +6,8 @@ from logging import getLogger
 from ml_lib.misc.data_structures import Maybe, SingletonMeta
 import torch
 from torch import nn
+
+from nugets.pipeline.configs import BackboneConf
 
 log = getLogger(__name__)
 
@@ -27,8 +29,8 @@ class Hyperparameter(Generic[T]):
         if not isinstance(val, self.type):
             raise ValueError(f"Expected {self.type}, got {type(val)}")
 
-    def parse(self, val: str) -> T:
-        """Parse the hyperparameter value from a string"""
+    def serialize(self, val: str|dict) -> T:
+        """Parse the hyperparameter value from a config"""
         return self.type(val)
 
     def get_dest(self, attr_name):
@@ -59,9 +61,11 @@ class Hyperparameter(Generic[T]):
 @dataclass
 class InnerBackbone():
     t: "type[BackBone]"
-    params: "Namespace"
+    params: "Namespace|dict"
 
     def load(self):
+        if isinstance(self.params, dict):
+            return self.t.from_dict(self.params)
         return self.t.from_args(self.params)
 
 
@@ -73,6 +77,10 @@ class OtherBackboneHyperparameter(Hyperparameter[InnerBackbone]):
     def __init__(self, description: str|None = None):
         self.type = InnerBackbone
         self.description = description
+
+    def serialize(self, val:dict):
+        config = BackboneConf.model_validate(val)
+        return InnerBackbone(config.get_type(), config.get_parameters())
     
     def validate(self, val: InnerBackbone):
         pass # for now
@@ -284,11 +292,17 @@ class BackBone(nn.Module, metaclass=BackBoneMeta):
         return parser
     
     @classmethod
-    def from_args(cls, args: "Namespace") -> "BackBone":
+    def from_args(cls, args: "Namespace") -> Self:
         """Create a backbone from arguments"""
         kwargs = {}
         for attr_name, t in cls.list_hyperparameters(return_types=True):
             kwargs[attr_name] = t.read_argparse_arguments(args, attr_name)
         return cls(**kwargs)
 
-    
+    @classmethod
+    def from_dict(cls, args: dict) -> Self:
+        """Create a backbone from arguments"""
+        kwargs = {}
+        for attr_name, t in cls.list_hyperparameters(return_types=True):
+            kwargs[attr_name] = t.serialize(args[attr_name])
+        return cls(**kwargs)

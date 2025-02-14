@@ -11,6 +11,7 @@ from torch_heterogeneous_batching import Batch
 import ot
 
 from .task import Task
+from .register import register
 
 @dataclass
 class DistanceDatapoint(Datapoint):
@@ -87,6 +88,7 @@ class DistanceTask(Task):
     def datapoint_type(self):
         return DistanceDatapoint
 
+@register
 class WassersteinDistanceTask(DistanceTask):
     def distance(self, set1, set2, p=1, sinkhorn=0):
         """Compute the p-Wasserstein distance between two sets"""

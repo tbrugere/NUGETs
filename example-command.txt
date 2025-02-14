@@ -1,0 +1,20 @@
+./nugets.sh train \
+    --batch-size 12 --learning-rate 1.e-3 \
+    --task "WassersteinDistanceTask" \
+    --dataset workdir/datasets/configs/dummy_growing_circles.yaml \
+    --backbone-type CoupledNetwork  \
+    --backbone-latent-dimension 256 \
+    --backbone-p 2 \
+    --backbone-decoder-distance mse \
+    --backbone-encoder-backbone Transformer \
+        --backbone-encoder-n-heads 12 \
+        --backbone-encoder-n-layers 6 \
+        --backbone-encoder-d-model 768 \
+        --backbone-encoder-key-dim 512 \
+        --backbone-encoder-feed-forward-hidden-dim 512\
+    --backbone-decoder-backbone Transformer \
+        --backbone-decoder-n-heads 12 \
+        --backbone-decoder-n-layers 6 \
+        --backbone-decoder-d-model 768 \
+        --backbone-decoder-key-dim 512 \
+        --backbone-decoder-feed-forward-hidden-dim 512

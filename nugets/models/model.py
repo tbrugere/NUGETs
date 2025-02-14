@@ -17,11 +17,15 @@ They all can contain learnable parameters, but the encoder-decoder should have
 For example the encoder
 """
 from typing import Any, TYPE_CHECKING, TypeVar
+from pathlib import Path
+import yaml
 
 from ml_lib.datasets.datapoint import Datapoint
 import lightning as pl
 import torch
 from torch import nn
+
+from nugets.pipeline.configs import ModelConf
 
 if TYPE_CHECKING:
     from nugets.tasks import Task
@@ -82,7 +86,6 @@ class EncoderDecoderWithProjection(EncoderDecoder):
                      backbone_result: Any, encoder_info: Any) -> torch.Tensor:
         del batch, backbone_result, encoder_info
         raise NotImplementedError
-
 
 class Model(pl.LightningModule):
     """Base class for all models
@@ -156,9 +159,9 @@ class Model(pl.LightningModule):
     @classmethod
     def argument_parser(cls, parser):
         from nugets.models.backbones import get_backbones_register
-        from nugets.datasets import get_dataset_register
+        from nugets.tasks import get_tasks_register
         backbone_register = get_backbones_register()
-        dataset_register = get_dataset_register()
+        task_register = get_tasks_register()
         """Adds the ability to load a Model class to a parser"""
 
         task_group = parser.add_argument_group(title="Task", prefix=None, dest_group="task")
@@ -171,8 +174,8 @@ class Model(pl.LightningModule):
             backbone_type.argument_parser(backbone_group)
 
 
-        task_group.add_argument("--task", type=str, required=True, help="The task to train on")
-        task_group.add_argument("--dataset", type=str, required=True, help="The dataset to train on", choices=dataset_register.keys())
+        task_group.add_argument("--task", type=str, required=True, help="The task to train on", choices=task_register.keys())
+        task_group.add_argument("--dataset", type=Path, metavar="config_path", required=True, help="The dataset to train on")
         backbone_group.add_argument("--type", type=str, required=True, help="The backbone to use", update=add_backbone_parameters, choices=backbone_register.keys())
         training_param_group.add_argument("--batch-size", type=int, required=True, help="The batch size")
         training_param_group.add_argument("--learning-rate", type=float, required=True, help="The learning rate")
@@ -181,12 +184,48 @@ class Model(pl.LightningModule):
     @classmethod
     def from_args(cls, args):
         from nugets.models.backbones import get_backbones_register
+        from nugets.tasks import get_tasks_register
         backbone_register = get_backbones_register()
-        dataset_register = 
+        task_register  = get_tasks_register()
         backbone_name = args.backbone.type
         backbone_type = backbone_register[backbone_name]
         backbone = backbone_type.from_args(args.backbone)
 
+        with args.task.dataset.open() as f:
+            dataset_config = yaml.safe_load(f)
+        dataset_name = dataset_config.pop("type")
+        task_type = task_register[args.task.task]
+        task = task_type(dataset_name, dataset_config)
+        
+        return cls(backbone=backbone, task=task, batch_size=args.train.batch_size, 
+                   learning_rate=args.train.learning_rate)
 
-        raise NotImplementedError
+    @classmethod
+    def from_dict(cls, config: dict):
+        config_ = ModelConf.model_validate(config)
+        return cls.from_config(config_)
 
+    @classmethod
+    def from_config_file(cls, config: Path):
+        match config.suffix:
+            case "yaml":
+                import yaml
+                with config.open() as f:
+                    config_dict = yaml.safe_load(f)
+            case "json":
+                import json
+                with config.open() as f:
+                    config_dict = json.load(f)
+            case other_extension:
+                print(f"unrecognized extension {other_extension}, interpreting as json")
+                import json
+                with config.open() as f:
+                    config_dict = json.load(f)
+        return cls.from_dict(config_dict)
+
+    @classmethod
+    def from_config(cls, config: ModelConf):
+        return cls(backbone=config.backbone.load(), task = config.task.load(), 
+                 batch_size= config.batch_size, learning_rate= config.learning_rate, 
+                 debug_mode=config.debug_mode)
+        

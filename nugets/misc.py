@@ -54,7 +54,7 @@ class Nestedspace(argparse.Namespace):
             ns = getattr(self, group, Nestedspace())
             return getattr(ns, name)
         else:
-            return super().__getattr__(name)
+            return getattr(super(), name)
 
 
 class CustomHelpAction(argparse._HelpAction):

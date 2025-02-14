@@ -10,7 +10,6 @@ log = getLogger(__name__)
 
 @create_argument_parser(description="NUGETS - NeUral GEomeTry Suite")
 def argument_parser(parser):
-    parser.exit_on_error = False
     parser.add_argument(
         '-d', '--debug',
         help="Print lots of debugging statements",
@@ -43,7 +42,10 @@ def train_parser(parser):
 
 def do_train(args):
     from nugets.models.model import Model
+    import lightning as pl
     model = Model.from_args(args)
+    trainer = pl.Trainer(default_root_dir="workdir/")
+    trainer.fit(model=model)
     
 
 def main():

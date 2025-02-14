@@ -1,4 +1,3 @@
-__main__.py train: saw updates
 usage: __main__.py train [-h] --task TASK.TASK --backbone-type
                          {CoupledNetwork,Transformer} --batch-size
                          TRAIN.BATCH_SIZE --learning-rate TRAIN.LEARNING_RATE
