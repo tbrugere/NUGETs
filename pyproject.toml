@@ -17,6 +17,7 @@ dependencies = [
     "geomloss>=0.2.6",
     "pyyaml>=6.0.2",
     "pydantic>=2.10.6",
+    "wandb>=0.19.6",
 ]
 
 [dependency-groups]

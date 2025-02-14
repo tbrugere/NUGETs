@@ -29,9 +29,12 @@ class Hyperparameter(Generic[T]):
         if not isinstance(val, self.type):
             raise ValueError(f"Expected {self.type}, got {type(val)}")
 
-    def serialize(self, val: str|dict) -> T:
+    def deserialize(self, val: str|dict) -> T:
         """Parse the hyperparameter value from a config"""
         return self.type(val)
+
+    def serialize(self, val: T) -> str|dict:
+        return str(val)
 
     def get_dest(self, attr_name):
         return attr_name
@@ -61,7 +64,7 @@ class Hyperparameter(Generic[T]):
 @dataclass
 class InnerBackbone():
     t: "type[BackBone]"
-    params: "Namespace|dict"
+    params: "Namespace|dict[str, Any]"
 
     def load(self):
         if isinstance(self.params, dict):
@@ -78,9 +81,16 @@ class OtherBackboneHyperparameter(Hyperparameter[InnerBackbone]):
         self.type = InnerBackbone
         self.description = description
 
-    def serialize(self, val:dict):
+    def deserialize(self, val:dict):
         config = BackboneConf.model_validate(val)
         return InnerBackbone(config.get_type(), config.get_parameters())
+
+    def serialize(self, val: InnerBackbone):
+        if isinstance(val.params, dict):
+            params = val.params
+        else:
+            params = val.t.args_to_dict(val.params)
+        return dict(type=val.t.__name__, **params)
     
     def validate(self, val: InnerBackbone):
         pass # for now
@@ -300,9 +310,18 @@ class BackBone(nn.Module, metaclass=BackBoneMeta):
         return cls(**kwargs)
 
     @classmethod
+    def args_to_dict(cls, args: "Namespace") -> dict[str, str|dict]:
+        """Create a backbone from arguments"""
+        kwargs = {}
+        for attr_name, t in cls.list_hyperparameters(return_types=True):
+            attr_value = t.read_argparse_arguments(args, attr_name)
+            kwargs[attr_name] = t.serialize(attr_value)
+        return kwargs
+
+    @classmethod
     def from_dict(cls, args: dict) -> Self:
         """Create a backbone from arguments"""
         kwargs = {}
         for attr_name, t in cls.list_hyperparameters(return_types=True):
-            kwargs[attr_name] = t.serialize(args[attr_name])
+            kwargs[attr_name] = t.deserialize(args[attr_name])
         return cls(**kwargs)

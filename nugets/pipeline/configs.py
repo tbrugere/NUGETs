@@ -10,6 +10,9 @@ log = getLogger(__name__)
 
 class GlobalConf(pydantic.BaseModel):
     loglevel: str = "WARNING"
+    wandb_key: str|None = pydantic.Field(default=None)
+    wandb_project: str|None = "test-wandb"
+    gcp_key: str|None = pydantic.Field(default=None)
     model_config = pydantic.ConfigDict(extra="forbid")
 
 class TaskConf(pydantic.BaseModel):
