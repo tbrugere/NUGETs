@@ -5,6 +5,7 @@ from torch import nn
 from nugets.models.backbone import (BackBone, int_hyperparameter, 
                 model_attribute, hyperparameter,  other_backbone_hyperparameter, InnerBackbone)
 from nugets.models.backbones.register import register
+import nugets.losses.losses as Losses
 
 
 @register
@@ -59,6 +60,7 @@ class CoupledNetwork(BackBone):
             self.encoder_projection_2 = nn.Identity()
             self.decoder_projection_1 = nn.Identity()
             self.decoder_projection_2 = nn.Identity()
+        self.decoder_distance = getattr(Losses, self.decoder_distance)
 
             
 

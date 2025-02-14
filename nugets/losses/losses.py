@@ -7,4 +7,5 @@ class SinkhornLoss:
     def __init__(self, **kwargs):
         self.loss = SamplesLoss(loss='sinkhorn', **kwargs)
     
-    #def __call__(self, set1, set2):
+    def __call__(self, set1, set2):
+        return self.loss(set1, set2)
