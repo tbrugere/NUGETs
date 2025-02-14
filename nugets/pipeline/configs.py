@@ -1,11 +1,15 @@
 from typing import Any
+from logging import getLogger
 from pathlib import Path
 import pydantic
 import yaml
 
 from ml_lib.misc.data_structures import SingletonMeta
 
+log = getLogger(__name__)
+
 class GlobalConf(pydantic.BaseModel):
+    loglevel: str = "WARNING"
     model_config = pydantic.ConfigDict(extra="forbid")
 
 class TaskConf(pydantic.BaseModel):
@@ -58,6 +62,10 @@ class Config(metaclass=SingletonMeta):
     @classmethod
     def load(cls, path:Path):
         self = cls()
+        if not path.exists():
+            log.warn(f"Config path {path} does not exists, using config defaults")
+            self.config = GlobalConf()
+            return
         with path.open() as f:
             config_dict = yaml.safe_load(f)
         self.config = GlobalConf.model_validate(config_dict)
