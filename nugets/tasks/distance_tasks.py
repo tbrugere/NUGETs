@@ -7,30 +7,14 @@ from re import L
 from ml_lib.datasets import Transform, Datapoint
 from torch import Tensor
 from torch_heterogeneous_batching import Batch
+from nugets.datasets.datapoint_types import DistanceDatapoint
 
 import ot
 
 from .task import Task
 from .register import register
 
-@dataclass
-class DistanceDatapoint(Datapoint):
-    set1: Tensor
-    set2: Tensor
-    distance: Tensor
 
-    @staticmethod
-    def collate(batch):
-        set1 = Batch.from_list([x.set1 for x in batch])
-        set2 = Batch.from_list([x.set2 for x in batch])
-        distance = torch.stack([x.distance for x in batch])
-        return DistanceBatch(set1=set1, set2=set2, distance=distance)
-
-@dataclass
-class DistanceBatch(Datapoint):
-    set1: Batch
-    set2: Batch
-    distance: Tensor
 
 def triangular_index(i):
     r"""Decomposes i into (k, l) where k < l
@@ -73,7 +57,7 @@ class DistanceTask(Task):
     """Task for learning to predict a distance between two sets"""
 
     def process_dataset(self, dataset):
-        transform = Transform(self.distance)
+        transform = PairwiseDistances(self.distance)
         return transform(dataset)
 
     def distance(self, set1, set2):
@@ -83,7 +67,20 @@ class DistanceTask(Task):
     def get_encoder_decoder(self, backbone):
         """Get the encoder-decoder"""
         from nugets.models.encoder_decoders.distances import DistanceEncoderDecoder
-        return DistanceEncoderDecoder(backbone)
+        dataset_info = self.dataset_info()
+        backbone_input_dims = backbone.get_input_dim()
+        backbone_output_dim = backbone.get_output_dim()
+        if "dim1" in dataset_info:
+            input_dim1 = dataset_info["dim1"]
+            input_dim2 = dataset_info["dim2"]
+        else: 
+            input_dim1 = input_dim2 = dataset_info["dim"]
+        same_input_proj = getattr(backbone, 
+                                  "same_input_proj", input_dim1 == input_dim2)
+        return DistanceEncoderDecoder(input_dim = (input_dim1, input_dim2), 
+                                      backbone_input_dim=backbone_input_dims, 
+                                      backbone_output_dim=backbone_output_dim, 
+                                      same_input_proj=same_input_proj)
 
     def datapoint_type(self):
         return DistanceDatapoint

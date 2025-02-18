@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal
 import torch
+from torch import Tensor
 import numpy as np
 
 from ml_lib.datasets import Datapoint, register as dataset_register
@@ -31,3 +32,21 @@ class Point_datapoint(Datapoint):
         return cls(torch.stack(input_points, dim=0))
 
 
+@dataclass
+class DistanceDatapoint(Datapoint):
+    set1: Tensor
+    set2: Tensor
+    distance: Tensor
+
+    @staticmethod
+    def collate(batch):
+        set1 = Batch.from_list([x.set1 for x in batch], order=1)
+        set2 = Batch.from_list([x.set2 for x in batch], order=1)
+        distance = torch.stack([x.distance for x in batch])
+        return DistanceBatch(set1=set1, set2=set2, distance=distance)
+
+@dataclass
+class DistanceBatch(Datapoint):
+    set1: Batch
+    set2: Batch
+    distance: Tensor
