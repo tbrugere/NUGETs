@@ -19,8 +19,8 @@ class CoupledNetwork(BackBone):
     same space, model1=model2.
     However, I have added model1 and model2 to account for the case where we ask
     the Siamese network to learn something like Gromov-Wasserstein distance. In
-    this case, this is an abuse of notation as the network is no longer "Siamese"
-    but rather a "coupled" model. 
+    this case, this is an abuse of notation as the network is no longer Siamese
+    but rather a coupled model. 
     
     """
 
@@ -43,6 +43,8 @@ class CoupledNetwork(BackBone):
     decoder1: BackBone = model_attribute()
     decoder2: BackBone = model_attribute()
 
+    decoder_loss_fn = model_attribute()
+
 
     def __setup__(self):
         self.encoder1 = self.encoder.load()
@@ -60,7 +62,7 @@ class CoupledNetwork(BackBone):
             self.encoder_projection_2 = nn.Identity()
             self.decoder_projection_1 = nn.Identity()
             self.decoder_projection_2 = nn.Identity()
-        self.decoder_distance = getattr(Losses, self.decoder_distance)
+        self.decoder_loss_fn = getattr(Losses, self.decoder_distance)
 
             
 
@@ -72,7 +74,7 @@ class CoupledNetwork(BackBone):
             out1 = self.decoder1(self.decoder_projection_1(v1))
             out2 = self.decoder2(self.decoder_projection_2(v2))
             reg = self.decoder_distance(batch.set1, out1) #TODO: Change when we implement the loss module
-            reg = reg + self.decoder_distance(batch.set2, out2)
+            reg = reg + self.decoder_loss_fn(batch.set2, out2)
         else: reg = None
         return torch.linalg.norm(v1 - v2, p=self.p), reg
 
