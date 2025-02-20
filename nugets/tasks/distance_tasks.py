@@ -10,6 +10,7 @@ from torch_heterogeneous_batching import Batch
 from nugets.datasets.datapoint_types import DistanceDatapoint
 
 import ot
+from scipy.spatial.distance import directed_hausdorff
 
 from .task import Task
 from .register import register
@@ -98,3 +99,17 @@ class WassersteinDistanceTask(DistanceTask):
         if sinkhorn > 0:
             return ot.sinkhorn2(a, b, M, reg=sinkhorn)
         return ot.emd2(a, b, M)**(1/p)
+
+@register
+class HausdorffDistanceTask(DistanceTask):
+    def distance(self, set1, set2):
+        return max(directed_hausdorff(set1, set2)[0], directed_hausdorff(set2, set1)[0])
+
+@register
+class FrechetDistanceTask(DistanceTask):
+    """
+    Suppose we are given two polygonal curves, maybe we can represent
+    these by ordered sets.  
+    """
+    def distance(self, set1, set2):
+        return 
