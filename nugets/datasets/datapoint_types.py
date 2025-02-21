@@ -50,3 +50,19 @@ class DistanceBatch(Datapoint):
     set1: Batch
     set2: Batch
     distance: Tensor
+
+@dataclass
+class LabeledSetDatapoint(Datapoint):
+    pointset: Tensor
+    label: Tensor
+
+    @staticmethod
+    def collate(batch):
+        pointset = Batch.from_list([p.pointset for p in points])
+        label = torch.stack([p.label for p in batch])
+        return LabeledSetBatch(pointset=pointset, label=labels)
+
+@dataclass
+class LabeledSetBatch(Datapoint):
+   pointset: Batch
+   label: Tensor
