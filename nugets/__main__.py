@@ -1,3 +1,4 @@
+from argparse import BooleanOptionalAction
 import logging
 from logging import getLogger
 from pathlib import Path
@@ -43,15 +44,23 @@ def argument_parser(parser):
     wandb_agent_subparser = subparsers.add_parser("wandb_agent", help="run the agent for a wandb sweep")
     wandb_agent_parser(wandb_agent_subparser)
 
+def train_parser_common(parser):
+    parser.add_argument("--profile", type=str, 
+                        action=BooleanOptionalAction,  help="run profiler" )
+    parser.add_argument("--n-epochs", type=int, )
+
+
 @create_argument_parser(description="train a model")
 def train_parser(parser):
     from nugets.models.model import Model
     parser = Model.argument_parser(parser)
+    train_parser_common(parser)
     return parser
 
 @create_argument_parser(description="train a model from a config file")
 def train_config_parser(parser):
     parser.add_argument("model_config", type=Path, help="model config path")
+    train_parser_common(parser)
     return parser
 
 @create_argument_parser(description="run the agent for a wandb sweep")
@@ -65,26 +74,27 @@ def wandb_agent_parser(parser):
 def train_from_args(args):
     from nugets.models.model import Model
     model = Model.from_args(args)
-    train_model(model)
+    train_model(model, n_epochs=args.n_epochs, profile=args.profile)
 
-def train_from_dict(config):
+def train_from_dict(config, **kwargs):
     from nugets.models.model import Model
     model = Model.from_dict(config)
-    train_model(model)
+    train_model(model, **kwargs)
 
-def train_from_config(config_file):
+def train_from_config(config_file,*, profile=False, n_epochs):
     from nugets.models.model import Model
     model = Model.from_config_file(config_file)
-    train_model(model)
+    train_model(model, profile=profile, n_epochs=n_epochs)
 
 def run_from_wandb_sweep():
     from nugets.models.model import Model
-    model = Model.from_dict(dict(wandb.config))
-    train_model(model)
-    wandb.config
+    config_dict = dict(wandb.config)
+    n_epochs = config_dict.pop("n_epochs")
+    model = Model.from_dict(config_dict)
+    train_model(model, n_epochs=n_epochs)
 
 def run_wandb_sweep_agent(args):
-    wandb.agent(sweep_id=args.sweep_id, count=args.n_runs, function=run_from_wandb_sweep())
+    wandb.agent(sweep_id=args.sweep_id, count=args.n_runs, function=run_from_wandb_sweep)
 
 def main():
     parser: CustomArgumentParser = argument_parser()
@@ -99,7 +109,7 @@ def main():
         case "train":
             train_from_args(args)
         case "train_from_config":
-            train_from_config(args.model_config)
+            train_from_config(args.model_config, profile=args.profile)
         case other:
             log.error(f"Unrecognized subcommand {other}")
             sys.exit(1)   

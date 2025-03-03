@@ -14,10 +14,13 @@ dependencies = [
     "torch_scatter",
     "torch_geometric",
     "pot>=0.9.5",
-    "geomloss>=0.2.6",
+    "geomloss[full]>=0.2.6",
     "pyyaml>=6.0.2",
     "pydantic>=2.10.6",
     "wandb>=0.19.6",
+    "google-cloud-storage>=3.1.0",
+    "gcsfs>=2025.2.0",
+    "fsspec[gcs]>=2025.2.0",
 ]
 
 [dependency-groups]
@@ -56,6 +59,7 @@ venv = ".venv"
 [tool.uv.sources]
 ml-lib = { git = "https://github.com/tbrugere/ml_lib.git", rev = "devel" }
 torch-heterogeneous-batching = { git = "ssh://git@github.com/tbrugere/pytorch_heterogeneous_batching.git", rev = "main" }
+geomloss = { git = "https://github.com/tbrugere/geomloss", rev = "batching" }
 
 # torch_scatter = [
 #     { url = "https://data.pyg.org/whl/torch-2.5.0%2Bcu124/torch_scatter-2.1.2%2Bpt25cu124-cp311-cp311-linux_x86_64.whl", marker="sys_platform == 'linux' and platform_machine == 'x86_64'" }

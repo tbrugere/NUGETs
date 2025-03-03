@@ -1,3 +1,4 @@
+import hashlib
 from typing import Any
 from logging import getLogger
 from pathlib import Path
@@ -12,10 +13,32 @@ class GlobalConf(pydantic.BaseModel):
     loglevel: str = "WARNING"
     wandb_key: str|None = pydantic.Field(default=None)
     wandb_project: str|None = "test-wandb"
-    gcp_key: str|None = pydantic.Field(default=None)
+    # gcp_key: str|None = pydantic.Field(default=None) 
+    # gcp should be initialized using the 
+    # gcloud auth activate-service-account 
+    # command if on servers, or the gcloud auth login command when working locally
     model_config = pydantic.ConfigDict(extra="forbid")
+    checkpoint_bucket: str|None = None
+    processed_dataset_bucket: str
+    num_workers: int = 8
+    multi_epoch_data_loader: bool = True
+    prefetch_factor: int = 4
 
-class TaskConf(pydantic.BaseModel):
+    def get_default_root_dir(self, model):
+        if self.checkpoint_bucket is None:
+            log.warn("No checkpoint bucket provided, defaulting to local saves")
+            return f"workdir/{model.get_dirname()}"
+        else:
+            return f"{self.checkpoint_bucket}/{model.get_dirname()}"
+
+
+
+class ConfigConsistentHashMixin():
+    def consistent_hash(self):
+        return hashlib.sha256(f"{self.__class__.__qualname__}::{self.model_dump_json()}".encode('utf-8', errors='ignore')).digest()#type:ignore
+        
+
+class TaskConf(pydantic.BaseModel, ConfigConsistentHashMixin):
     type: str
     dataset: str
     dataset_config: dict
@@ -28,7 +51,7 @@ class TaskConf(pydantic.BaseModel):
         return task_type(self.dataset, self.dataset_config)
 
 
-class BackboneConf(pydantic.BaseModel):
+class BackboneConf(pydantic.BaseModel, ConfigConsistentHashMixin):
     type: str
     model_config = pydantic.ConfigDict(extra="allow")
 
@@ -46,7 +69,7 @@ class BackboneConf(pydantic.BaseModel):
         backbone_type = self.get_type()
         return backbone_type.from_dict(self.get_parameters())
 
-class ModelConf(pydantic.BaseModel):
+class ModelConf(pydantic.BaseModel, ConfigConsistentHashMixin):
     task: TaskConf
     backbone: BackboneConf
     batch_size: int
