@@ -131,11 +131,15 @@ class OtherBackboneHyperparameter(Hyperparameter[InnerBackbone]):
 class Unspecified(metaclass=SingletonMeta):
     pass
 
-def hyperparameter(type, default=Maybe(), description: str|None = None) -> Any:
-    return Hyperparameter(type, default=default, description=description)
-def int_hyperparameter(default=Maybe(), description: str|None = None) -> int:
+def hyperparameter(type: type[T], default: Unspecified|T=Unspecified(), description: str|None = None) -> Any:
+    default_maybe: Maybe[T] = Maybe()
+    if not isinstance(default, Unspecified): default_maybe = Maybe(default)
+    return Hyperparameter(type, default=default_maybe, description=description)
+def int_hyperparameter(default: int|Unspecified=Unspecified(), description: str|None = None) -> int:
     return hyperparameter(int, default=default, description=description)
-def float_hyperparameter(default=Maybe(), description: str|None = None) -> float:
+def bool_hyperparameter(default: bool|Unspecified=Unspecified(), description: str|None = None) -> int:
+    return hyperparameter(bool, default=default, description=description)
+def float_hyperparameter(default: float|Unspecified=Unspecified(), description: str|None = None) -> float:
     return hyperparameter(float, default=default, description=description)
 def other_backbone_hyperparameter(description: str|None = None) -> InnerBackbone:
     return OtherBackboneHyperparameter(description=description)#type: ignore
@@ -158,7 +162,7 @@ class BackBoneMeta(type):
         return super(BackBoneMeta, cls).__new__(cls, name, bases, namespace, **kwds)
             
 
-@dataclass_transform(kw_only_default=True, field_specifiers=(hyperparameter, int_hyperparameter, float_hyperparameter, other_backbone_hyperparameter))
+@dataclass_transform(kw_only_default=True, field_specifiers=(hyperparameter, int_hyperparameter, float_hyperparameter, bool_hyperparameter, other_backbone_hyperparameter))
 class BackBone(nn.Module, metaclass=BackBoneMeta):
     """Base class for backbone models
 
@@ -193,8 +197,8 @@ class BackBone(nn.Module, metaclass=BackBoneMeta):
     def check_initialized(self, default_attributes):
         hyperparams = set(self.list_hyperparameters())
         for k in self._required_model_attributes:
-            if k in vars(self):
-                raise ValueError(f"{self.__class__.__name__}: attribute {k} was not in __setup__")
+            if not hasattr(self, k):
+                raise ValueError(f"{self.__class__.__name__}: attribute {k} was not set in __setup__")
         for k in vars(self):
             # if k == "transformer": import pdb;pdb.set_trace()
             if k in hyperparams: continue
@@ -325,3 +329,19 @@ class BackBone(nn.Module, metaclass=BackBoneMeta):
         for attr_name, t in cls.list_hyperparameters(return_types=True):
             kwargs[attr_name] = t.deserialize(args[attr_name])
         return cls(**kwargs)
+
+
+    def get_hyperparameters_dict(self) -> dict[str, str|dict]:
+        return {
+            attr_name: h.serialize(getattr(self, attr_name))
+            for (attr_name, h) in self.list_hyperparameters(return_types=True)
+            }
+
+    def get_config(self) -> BackboneConf:
+        return BackboneConf(
+            type = self.__class__.__name__, 
+            **self.get_hyperparameters_dict()
+                )
+
+    def configure_optimizer(self):
+        return NotImplemented

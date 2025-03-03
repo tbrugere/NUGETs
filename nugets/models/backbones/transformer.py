@@ -11,8 +11,9 @@ class Transformer(BackBone):
     n_layers: int = int_hyperparameter(description="number of layers")
     d_model: int = int_hyperparameter(description="number of dimensions of the input and the output")
     
-    key_dim: int = int_hyperparameter(description="number of dimensions for key, query"
-                                 " and values in attention mechanism")
+    # for simplicity, key_dim is always set to d_model / n_heads (to have key = query = value )
+    # key_dim: int = int_hyperparameter(description="number of dimensions for key, query"
+                                 # " and values in attention mechanism")
     feed_forward_hidden_dim: int = int_hyperparameter(description="number of hidden dimensions"
                                  " in feed-forward blocks")
 
@@ -23,7 +24,7 @@ class Transformer(BackBone):
             n_heads=self.n_heads,
             n_layers=self.n_layers,
             input_dim=self.d_model,
-            key_dim=self.key_dim,
+            key_dim=None,
             hidden_dim=self.feed_forward_hidden_dim,
         )
 

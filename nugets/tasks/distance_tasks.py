@@ -5,12 +5,13 @@ from dataclasses import dataclass
 from re import L
 
 from ml_lib.datasets import Transform, Datapoint
+# import numpy as np
+import ot
+from scipy.spatial.distance import directed_hausdorff
+import torch
 from torch import Tensor
 from torch_heterogeneous_batching import Batch
 from nugets.datasets.datapoint_types import DistanceDatapoint
-
-import ot
-from scipy.spatial.distance import directed_hausdorff
 
 from .task import Task
 from .register import register
@@ -48,8 +49,8 @@ class PairwiseDistances(Transform):
 
     def __getitem__(self, idx):
         k, l = triangular_index(idx)
-        set1 = self.inner[k]
-        set2 = self.inner[l]
+        set1 = self.inner[k].pointset
+        set2 = self.inner[l].pointset
         distance = self.distance(set1, set2)
         return DistanceDatapoint(set1=set1, set2=set2, distance=distance)
 
@@ -78,10 +79,13 @@ class DistanceTask(Task):
             input_dim1 = input_dim2 = dataset_info["dim"]
         same_input_proj = getattr(backbone, 
                                   "same_input_proj", input_dim1 == input_dim2)
+        backbone_reconstructs = getattr(backbone, "reconstruct_input", False)
         return DistanceEncoderDecoder(input_dim = (input_dim1, input_dim2), 
                                       backbone_input_dim=backbone_input_dims, 
                                       backbone_output_dim=backbone_output_dim, 
-                                      same_input_proj=same_input_proj)
+                                      same_input_proj=same_input_proj, 
+                                      backbone_reconstructs=backbone_reconstructs
+                                      )
 
     def datapoint_type(self):
         return DistanceDatapoint
@@ -94,8 +98,8 @@ class WassersteinDistanceTask(DistanceTask):
         M = ot.dist(set1, set2, metric='euclidean')**p
         sz_a = len(set1)
         sz_b = len(set2)
-        a = np.ones(sz_a)/sz_a
-        b = np.ones(sz_b)/sz_b
+        a = torch.ones(sz_a)/sz_a
+        b = torch.ones(sz_b)/sz_b
         if sinkhorn > 0:
             return ot.sinkhorn2(a, b, M, reg=sinkhorn)
         return ot.emd2(a, b, M)**(1/p)

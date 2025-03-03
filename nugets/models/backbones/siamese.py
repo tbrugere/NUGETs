@@ -1,9 +1,12 @@
 from typing import Callable
+from ml_lib.models.layers import MLP
+from torch_heterogeneous_batching import Batch
+from torch_heterogeneous_batching.batch import BatchIndicator
 from torch_heterogeneous_batching.nn.transformer import Transformer as Transformer_nn
 import torch
 from torch import nn
 
-from nugets.models.backbone import (BackBone, int_hyperparameter, 
+from nugets.models.backbone import (BackBone, int_hyperparameter, bool_hyperparameter, 
                 model_attribute, hyperparameter,  other_backbone_hyperparameter, InnerBackbone)
 from nugets.models.backbones.register import register
 import nugets.losses.losses as Losses
@@ -26,8 +29,12 @@ class CoupledNetwork(BackBone):
     """
 
     encoder: InnerBackbone = other_backbone_hyperparameter("backbone for the encoder")
-    decoder: InnerBackbone = other_backbone_hyperparameter("backbone for the decoder")
 
+    reconstruct_input: bool = bool_hyperparameter(default=True, description="use reconstruction loss")
+
+    decoder_hidden_dim: int = int_hyperparameter(default=512, description="backbone for the decoder" )
+    decoder_n_layers: int = int_hyperparameter(default=3, description="number of layers of the decoder MLP")
+    decoder_n_points: int = int_hyperparameter(default=50, description="number of points output by the decoder")
 
     latent_dimension: int = int_hyperparameter(description="dimension of the latent space, set it to 0 to disable latent")
     p: int = int_hyperparameter(description="L_p distance function")
@@ -38,47 +45,62 @@ class CoupledNetwork(BackBone):
 
     encoder_projection_1: nn.Module = model_attribute()
     encoder_projection_2: nn.Module = model_attribute()
-    decoder_projection_1: nn.Module = model_attribute()
-    decoder_projection_2: nn.Module = model_attribute()
 
-    decoder1: BackBone = model_attribute()
-    decoder2: BackBone = model_attribute()
+    decoder1: MLP|None = model_attribute()
+    decoder2: MLP|None = model_attribute()
 
     decoder_loss_fn: Callable = model_attribute()
-
 
     def __setup__(self):
         self.encoder1 = self.encoder.load()
         self.encoder2 = self.encoder.load()
-        self.decoder1 = self.decoder.load()
-        self.decoder2 = self.decoder.load()
+        
+        if self.reconstruct_input:
+            self.decoder1 = MLP(self.latent_dimension, 
+                                *[self.decoder_hidden_dim]*self.decoder_n_layers, 
+                                self.decoder_n_points * self.encoder1.get_input_dim())
+            self.decoder2 = MLP(self.latent_dimension, 
+                                *[self.decoder_hidden_dim]*self.decoder_n_layers, 
+                                self.decoder_n_points * self.encoder1.get_input_dim())
+        else: self.decoder1 = self.decoder2 = None
 
         if self.latent_dimension:
             self.encoder_projection_1 = nn.Linear(self.encoder1.get_output_dim(), self.latent_dimension)
             self.encoder_projection_2 = nn.Linear(self.encoder2.get_output_dim(), self.latent_dimension)
-            self.decoder_projection_1 = nn.Linear(self.latent_dimension, self.decoder2.get_input_dim())
-            self.decoder_projection_2 = nn.Linear(self.latent_dimension, self.decoder2.get_input_dim())
         else: 
             self.encoder_projection_1 = nn.Identity()
             self.encoder_projection_2 = nn.Identity()
-            self.decoder_projection_1 = nn.Identity()
-            self.decoder_projection_2 = nn.Identity()
-        self.decoder_loss_fn = getattr(Losses, self.decoder_distance)
+
+        self.decoder_loss_fn = getattr(Losses, self.decoder_distance)()
 
             
 
     
     def forward(self, batch, return_reg_loss=False):
         set1, set2 = batch
-        v1 = self.encoder_projection_1(self.encoder1(set1))
-        v2 = self.encoder_projection_2(self.encoder2(set2))
-        if return_reg_loss:
-            out1 = self.decoder1(self.decoder_projection_1(v1))
-            out2 = self.decoder2(self.decoder_projection_2(v2))
-            reg = self.decoder_loss_fn(set1, out1)
-            reg = reg + self.decoder_loss_fn(set2, out2)
-        else: reg = None
-        return torch.linalg.norm(v1 - v2, p=self.p), reg
+        batch_size = set1.batch_size
+        v1, _ = self.encoder1(set1) # for now, ignore regularization for encoders/decoders
+        v2, _ = self.encoder2(set2)
+        v1 = self.encoder_projection_1(v1.mean())
+        v2 = self.encoder_projection_2(v2.mean())
+
+        predicted_distances = torch.linalg.vector_norm(v1 - v2, ord=self.p, dim=-1)
+
+
+        if self.reconstruct_input and self.training:
+            assert self.decoder1 is not None and self.decoder2 is not None
+            out1_data = self.decoder1(v1)\
+                    .reshape(batch_size * self.decoder_n_points, self.encoder1.get_input_dim())
+            out2_data = self.decoder2(v2)\
+                    .reshape(batch_size * self.decoder_n_points, self.encoder2.get_input_dim())
+            indicator = BatchIndicator(torch.full((batch_size,), self.decoder_n_points, device=v1.device))
+            out1 = Batch(out1_data, order=1, indicator=indicator)
+            out2 = Batch(out2_data, order=1, indicator=indicator)
+            return (predicted_distances, out1, out2), None
+        elif self.reconstruct_input: 
+            return (predicted_distances, None, None), None
+        else: 
+            return predicted_distances, None
 
     def get_input_dim(self): 
         return (self.encoder1.get_input_dim(), self.encoder2.get_input_dim())

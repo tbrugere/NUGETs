@@ -7,9 +7,11 @@ from pathlib import Path
 import warnings
 
 from ml_lib.datasets import Dataset
+from ml_lib.datasets.utils import MultiEpochDataLoader
 
 from nugets.datasets import get_dataset_register
 from nugets.misc import dict_to_bytes
+from nugets.pipeline.configs import Config, TaskConf
 
 log = getLogger(__name__)
 
@@ -31,6 +33,13 @@ class Task():
         b.write(bytes(1))
         b.write(dict_to_bytes(self.dataset_parameters))
         return hashlib.sha256(b.getvalue()).digest()
+
+    def get_config(self) -> TaskConf:
+        return TaskConf(
+            type=self.__class__.__name__,
+            dataset=self.dataset_name, 
+            dataset_config=self.dataset_parameters, 
+        )
 
     """
     Dataset processing
@@ -62,7 +71,8 @@ class Task():
         return Path(f"workdir/datasets/processed/{task_name}_{task_hash_b64}_{which}.tar")
 
     def cache_processed_dataset(self, which: Literal["train", "val", "test"], 
-                                skip_if_exists=False):
+                                skip_if_exists=False, 
+                                try_getting_from_cloud=False):
         """Cache the processed dataset"""
         from ml_lib.datasets.datasets.tar_dataset import AutoTarDataset
         log.info(f"{self}: Caching processed dataset for {which}")
@@ -80,17 +90,17 @@ class Task():
         dataset_type = dataset_register[self.dataset_name]
         return dataset_type.datatype
 
-    def get_cached_processed_dataset(self, which: Literal["train", "val", "test"]) -> Dataset:
+    def get_cached_processed_dataset(self, which: Literal["train", "val", "test"]) -> Dataset|None:
         """Return the cached processed dataset"""
         from ml_lib.datasets.datasets.tar_dataset import AutoTarDataset
         path = self.get_cached_processed_dataset_path(which)
+        if not path.exists(): return None
         return AutoTarDataset(self.datapoint_type(), path)
 
     def get_any_cached_processed_dataset(self):
         for which in ("train", "val", "test"):
-            path = self.get_cached_processed_dataset_path(which)
-            if path.exists():
-                return self.get_cached_processed_dataset(which)
+            ds = self.get_cached_processed_dataset(which)
+            if ds is not None: return ds
         return None
 
     def get_dataset(self, which: Literal["train", "val", "test"]) -> Dataset:
@@ -120,7 +130,7 @@ class Task():
 
     def prepare_data(self):
         for which in "train", "val", "test":
-            self.cache_processed_dataset(which, skip_if_exists=True)
+            self.cache_processed_dataset(which, skip_if_exists=True, try_getting_from_cloud=True)
             
 
 
@@ -134,8 +144,15 @@ class Task():
         """Get the dataloader"""
         from torch.utils.data import DataLoader
         dataset = self.get_dataset(which)
-        return DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4 if not no_workers else 0, 
+        config = Config.get()
+        if config.multi_epoch_data_loader:
+            data_loader = MultiEpochDataLoader
+        else: data_loader = DataLoader
+        return data_loader(dataset, batch_size=batch_size, shuffle=True, 
+                          num_workers=config.num_workers if not no_workers else 0, 
                           pin_memory=not no_workers, 
+                          persistent_workers=not no_workers, 
+                          prefetch_factor= None if no_workers else config.prefetch_factor, 
                           collate_fn=dataset.collate)
            
 
@@ -150,5 +167,6 @@ class Task():
         raise NotImplementedError
     
 
+    
 
 

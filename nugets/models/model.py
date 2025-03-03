@@ -17,21 +17,25 @@ They all can contain learnable parameters, but the encoder-decoder should have
 For example the encoder
 """
 from typing import Any, TYPE_CHECKING, TypeVar
+from logging import getLogger
 from pathlib import Path
+from base64 import b64encode
 import yaml
 
+from torch.optim import AdamW
 from ml_lib.datasets.datapoint import Datapoint
 import lightning as pl
 import torch
 from torch import nn
 
-from nugets.pipeline.configs import ModelConf
+from nugets.pipeline.configs import ModelConf, TaskConf, BackboneConf
 
 if TYPE_CHECKING:
     from nugets.tasks import Task
 
 from .backbone import BackBone
 
+log = getLogger(__name__)
 
 class EncoderDecoder(nn.Module):
     """Base class for encoder-decoder models
@@ -116,6 +120,8 @@ class Model(pl.LightningModule):
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.debug_mode = debug_mode
+        self.save_hyperparameters(self.get_config().model_dump())
+        # print(self.hparams)
 
     def forward(self, batch: Datapoint) -> Any:
         """Forward pass of the model"""
@@ -135,8 +141,10 @@ class Model(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        """Configure the optimizer"""
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        backbone_optim = self.backbone.configure_optimizer()
+        if backbone_optim is not NotImplemented:
+            return backbone_optim(self.parameters())
+        optimizer = AdamW(self.parameters(), lr=self.learning_rate, eps=1e-7)
         return optimizer
 
     def prepare_data(self):
@@ -228,4 +236,28 @@ class Model(pl.LightningModule):
         return cls(backbone=config.backbone.load(), task = config.task.load(), 
                  batch_size= config.batch_size, learning_rate= config.learning_rate, 
                  debug_mode=config.debug_mode)
-        
+
+    def get_config(self):
+        backbone_conf = self.backbone.get_config()
+        task_conf = self.task.get_config()
+        return ModelConf(
+            backbone=backbone_conf, 
+            task=task_conf, 
+            batch_size = self.batch_size, learning_rate = self.learning_rate, 
+            debug_mode = self.debug_mode
+        )
+
+    def consistent_hash(self):
+        config = self.get_config()
+        return config.consistent_hash()
+
+    def get_dirname(self):
+        return b64encode(self.consistent_hash(), altchars=b':-').decode()
+
+    def get_dir(self, workdir=Path("workdir")) -> Path:
+        dirname = self.get_dirname()
+        dir = workdir / "models" / dirname
+        dir.mkdir(parents=True, exist_ok=True)
+        return dir
+
+
