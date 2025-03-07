@@ -26,7 +26,6 @@ class DistanceEncoderDecoder(EncoderDecoder):
             assert back_in1 == back_in2
         self.in_proj1 = Linear(in1, back_in1)
         self.in_proj2 = Linear(in2, back_in2) if not same_input_proj else self.in_proj1
-        self.out_proj = Linear(backbone_output_dim, 1)
         if backbone_reconstructs:
             self.sinkhorn_loss = SinkhornLoss()
             self.decode_proj1 = Linear(back_in1, in1)
@@ -41,7 +40,7 @@ class DistanceEncoderDecoder(EncoderDecoder):
     def decode(self, result: DistanceBackboneResult):
         if isinstance(result, tuple):
             result, _, _ = result
-        return self.out_proj(result).squeeze(-1)
+        return result
 
     def compute_loss(self, batch: DistanceBatch, backbone_result: DistanceBackboneResult, encoder_info):
         if isinstance(backbone_result, tuple):

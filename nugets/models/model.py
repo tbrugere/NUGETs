@@ -28,7 +28,7 @@ import lightning as pl
 import torch
 from torch import nn
 
-from nugets.pipeline.configs import ModelConf, TaskConf, BackboneConf
+from nugets.pipeline.configs import Config, ModelConf, TaskConf, BackboneConf
 
 if TYPE_CHECKING:
     from nugets.tasks import Task
@@ -139,6 +139,16 @@ class Model(pl.LightningModule):
             self.log('train_reg_loss', reg_loss)
             loss = loss + reg_loss
         return loss
+
+    def validation_step(self, batch, batch_idx):
+        """Training step of the model"""
+        encoded, encoder_info = self.encoder_decoder.encode(batch)
+        backbone_result, reg_loss = self.backbone(encoded, return_reg_loss=True)
+        results = self.encoder_decoder.decode(backbone_result)
+        if reg_loss is not None: 
+            self.log('val/reg_loss', reg_loss, batch_size=self.batch_size)
+        metrics = self.task.compute_metrics(batch, results)
+        self.log_dict(metrics, batch_size=self.batch_size)
 
     def configure_optimizers(self):
         backbone_optim = self.backbone.configure_optimizer()
@@ -259,5 +269,16 @@ class Model(pl.LightningModule):
         dir = workdir / "models" / dirname
         dir.mkdir(parents=True, exist_ok=True)
         return dir
+
+    def save_parameters_to_cloud(self):
+        bucket = Config.get_checkpoint_bucket()
+        blob = bucket.blob(f"{self.get_dirname()}/params.yaml")
+        with blob.open("w") as f:
+            json_obj = self.get_config().model_dump()
+            yaml.dump(json_obj, f)
+        
+
+
+
 
 

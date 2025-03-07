@@ -1,11 +1,14 @@
 import hashlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from logging import getLogger
 from pathlib import Path
 import pydantic
 import yaml
 
 from ml_lib.misc.data_structures import SingletonMeta
+
+if TYPE_CHECKING:
+    from google.cloud.storage import Client as GCS_Client, Bucket as GCS_Bucket
 
 log = getLogger(__name__)
 
@@ -29,8 +32,7 @@ class GlobalConf(pydantic.BaseModel):
             log.warn("No checkpoint bucket provided, defaulting to local saves")
             return f"workdir/{model.get_dirname()}"
         else:
-            return f"{self.checkpoint_bucket}/{model.get_dirname()}"
-
+            return f"gcs://{self.checkpoint_bucket}/{model.get_dirname()}"
 
 
 class ConfigConsistentHashMixin():
@@ -82,8 +84,11 @@ class Config(metaclass=SingletonMeta):
 
     config: None| GlobalConf
 
+    gcs_client: "None | GCS_Client"
+
     def __init__(self):
         self.config = None
+        self.gcs_client = None
 
     @classmethod
     def load(cls, path:Path):
@@ -102,4 +107,24 @@ class Config(metaclass=SingletonMeta):
         if self.config is None:
             raise ValueError("Global config was not loaded properly")
         return self.config
+
+    @classmethod
+    def get_gcs_client(cls) -> "GCS_Client":
+        from google.cloud.storage import Client
+        self = cls()
+        if self.gcs_client is None:
+            self.gcs_client = Client()
+        return self.gcs_client
+
+    @classmethod
+    def get_processed_dataset_bucket(cls) -> "GCS_Bucket":
+        client = cls.get_gcs_client()
+        bucket = client.bucket(cls.get().processed_dataset_bucket)
+        return bucket
+
+    @classmethod
+    def get_checkpoint_bucket(cls) -> "GCS_Bucket":
+        client = cls.get_gcs_client()
+        bucket = client.bucket(cls.get().checkpoint_bucket)
+        return bucket
 

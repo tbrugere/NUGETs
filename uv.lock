@@ -1024,7 +1024,7 @@ wheels = [
 [[package]]
 name = "ml-lib"
 version = "0.1.0"
-source = { git = "https://github.com/tbrugere/ml_lib?rev=devel#d1d92fe95b0ed7b75f364d687292a42adf141c8f" }
+source = { git = "https://github.com/tbrugere/ml_lib?rev=devel#a71224d1c38407d68ce89531f33e85774e53d71b" }
 dependencies = [
     { name = "numpy" },
     { name = "pydantic" },

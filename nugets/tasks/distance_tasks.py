@@ -90,6 +90,18 @@ class DistanceTask(Task):
     def datapoint_type(self):
         return DistanceDatapoint
 
+    def compute_metrics(self, datapoint: DistanceDatapoint, results: Tensor):
+        gt = datapoint.distance  
+        batch_error = torch.abs(results - gt)
+        relative_error = torch.clip(batch_error / gt, 1e3)
+        mean_error = batch_error.mean()
+        mean_relative_error = relative_error.mean()
+        return dict(
+            mean_error=mean_error, 
+            mean_relative_error=mean_relative_error, 
+        )
+
+
 @register
 class WassersteinDistanceTask(DistanceTask):
     def distance(self, set1, set2, p=1, sinkhorn=0):

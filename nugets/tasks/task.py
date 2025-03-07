@@ -1,9 +1,11 @@
 from typing import Literal
 from base64 import b64encode
+import functools as ft
 import hashlib
 from io import BytesIO
 from logging import getLogger
 from pathlib import Path
+from tqdm.auto import tqdm
 import warnings
 
 from ml_lib.datasets import Dataset
@@ -63,26 +65,37 @@ class Task():
         """Any preprocessing of the dataset that can be cached should be applied here"""
         return dataset
 
-    def get_cached_processed_dataset_path(self, which: Literal["train", "val", "test"]) -> Path:
+    def get_cached_processed_dataset_filename(self, which: Literal["train", "val", "test"]) -> str:
         """Get the path to the cached processed dataset"""
         task_name = self.__class__.__name__
         task_hash: bytes = self.consistent_hash()
         task_hash_b64: str = b64encode(task_hash, altchars=b':-').decode()
-        return Path(f"workdir/datasets/processed/{task_name}_{task_hash_b64}_{which}.tar")
+        return f"{task_name}_{task_hash_b64}_{which}.tar"
+
+    def get_cached_processed_dataset_path(self, which: Literal["train", "val", "test"]) -> Path:
+        """Get the path to the cached processed dataset"""
+        return Path("workdir/datasets/processed") / self.get_cached_processed_dataset_filename(which)
 
     def cache_processed_dataset(self, which: Literal["train", "val", "test"], 
                                 skip_if_exists=False, 
-                                try_getting_from_cloud=False):
+                                try_getting_from_cloud=False, 
+                                upload_to_cloud=False):
         """Cache the processed dataset"""
         from ml_lib.datasets.datasets.tar_dataset import AutoTarDataset
         log.info(f"{self}: Caching processed dataset for {which}")
         path = self.get_cached_processed_dataset_path(which)
         if path.exists() and skip_if_exists:
             return
+        if try_getting_from_cloud:
+            if self.get_dataset_from_cloud(which=which, unavailable_ok=True):
+                return
         dataset = self.get_inner_dataset(which)
         processed_dataset = self.process_dataset(dataset)
         path.parent.mkdir(parents=True, exist_ok=True)
-        AutoTarDataset.save_dataset(path, processed_dataset)
+        pbar = ft.partial(tqdm, desc=f"caching {which} dataset", miniters=1)
+        AutoTarDataset.save_dataset(path, processed_dataset, pbar=pbar)
+        if upload_to_cloud:
+            self.upload_dataset_to_cloud(which, overwrite=False)
 
     def datapoint_type(self):
         """Get the type of the datapoint"""
@@ -130,8 +143,42 @@ class Task():
 
     def prepare_data(self):
         for which in "train", "val", "test":
-            self.cache_processed_dataset(which, skip_if_exists=True, try_getting_from_cloud=True)
-            
+            self.cache_processed_dataset(which, skip_if_exists=True, 
+                                         try_getting_from_cloud=True, 
+                                         upload_to_cloud = True)
+
+    def get_dataset_cloud_object(self, which):
+        bucket = Config.get_processed_dataset_bucket()
+        filename = self.get_cached_processed_dataset_filename(which)
+        return  bucket.blob(filename)
+
+    def get_dataset_from_cloud(self, which, unavailable_ok=True):
+        blob = self.get_dataset_cloud_object(which)
+        if not blob.exists():
+            if not unavailable_ok:
+                raise FileNotFoundError("did not find processed dataset on google cloud")
+            return False
+        file = self.get_cached_processed_dataset_path(which)
+        blob.download_to_filename(str(file))
+        return True
+        
+    def upload_dataset_to_cloud(self, which, overwrite=True):
+        blob = self.get_dataset_cloud_object(which)
+        if blob.exists() and not overwrite:
+            return 
+        file = self.get_cached_processed_dataset_path(which)
+        blob.upload_from_filename(str(file))
+
+    def get_datasets_from_cloud(self, unavailable_ok=True, skip_if_exists=True):
+        for which in "train", "val", "test":
+            if self.get_cached_processed_dataset_path(which).exists() and skip_if_exists:
+                continue
+            self.get_dataset_from_cloud(which, unavailable_ok=unavailable_ok)
+
+    def upload_datasets_to_cloud(self, overwrite=False):
+        for which in "train", "val", "test":
+            self.upload_dataset_to_cloud(which, overwrite=overwrite)
+
 
 
     """
@@ -148,13 +195,13 @@ class Task():
         if config.multi_epoch_data_loader:
             data_loader = MultiEpochDataLoader
         else: data_loader = DataLoader
-        return data_loader(dataset, batch_size=batch_size, shuffle=True, 
+        return data_loader(dataset, batch_size=batch_size, shuffle=which =="train", 
                           num_workers=config.num_workers if not no_workers else 0, 
                           pin_memory=not no_workers, 
                           persistent_workers=not no_workers, 
                           prefetch_factor= None if no_workers else config.prefetch_factor, 
                           collate_fn=dataset.collate)
-           
+
 
     """
     Encoding
@@ -166,6 +213,15 @@ class Task():
         del backbone
         raise NotImplementedError
     
+
+    """
+    Metrics
+    --------
+    """
+
+    def compute_metrics(self, datapoint, results):
+        del datapoint, results
+        raise NotImplementedError
 
     
 
