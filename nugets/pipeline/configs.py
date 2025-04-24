@@ -13,6 +13,16 @@ if TYPE_CHECKING:
 log = getLogger(__name__)
 
 class GlobalConf(pydantic.BaseModel):
+    """Object representing the global config for NUGETs.
+
+    This should generally be loaded using the :py:class:`Config` class below, 
+    specifically the :py:func:`Config.load` method is run once 
+    at the beginning of the program, 
+    and the  :py:func:`Config.get` method subsequently 
+    returns config contents in a ``GlobalConf`` object.
+    """
+    
+
     loglevel: str = "WARNING"
     wandb_key: str|None = pydantic.Field(default=None)
     wandb_project: str|None = "test-wandb"

@@ -3,15 +3,25 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-NUGETS documentation
-====================
-
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
-
+.. include:: ../../README.rst
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   self
+   running
+   cloud_integration
+
+
+
+Packages
+========
+
+.. autosummary::
+   :toctree: _autosummary
+   :recursive:
+   :template: custom-module-template.rst
+   
+   nugets
 

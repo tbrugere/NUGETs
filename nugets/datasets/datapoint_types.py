@@ -22,6 +22,26 @@ class Set_datapoint(Datapoint):
 class Set_batch(Datapoint):
     pointset: Batch
 
+
+@dataclass
+class Graph_datapoint(Set_datapoint):
+    pointset: torch.Tensor
+    edges: torch.Tensor
+
+    @classmethod
+    def collate(cls, points):
+        input_sets = [p.pointset for p in points]
+        set_batch = Batch.from_list(input_sets, order=1)
+        set_ptr = set_batch.ptr
+        edges= [p.edges + offset for p, offset in zip(points, set_ptr)]
+        edges_batch = torch.cat(edges, dim=0)
+        return Graph_batch(set_batch, edges_batch)
+
+@dataclass
+class Graph_batch(Set_batch):
+    pointset: Batch
+    edges: torch.Tensor # edges are in data coordinates (pointset.data indices)
+
 @dataclass
 class Point_datapoint(Datapoint):
     point: torch.Tensor
