@@ -1,0 +1,59 @@
+name: test_sweep
+metric:
+  goal: minimize
+  name: mean_error
+method: grid
+parameters:
+  task:
+    parameters:
+      type: 
+        value: WassersteinDistanceTask
+      dataset: 
+        value: GrowingCircles
+      dataset_config:
+        parameters:
+          length: 
+            values: [100, 150]
+  backbone:
+    parameters:
+      type: 
+        value: CoupledNetwork
+      latent_dimension: 
+        values: [124, 256, 512]
+      p: 
+        value: 2
+      decoder_distance: 
+        value: SinkhornLoss
+      encoder: 
+        parameters:
+          type: 
+            value: Transformer
+          n_heads: 
+            value: 12
+          n_layers: 
+            value: 6
+          d_model: 
+            value: 768
+          key_dim: 
+            value: 512
+          feed_forward_hidden_dim: 
+            value: 512
+      decoder:
+        parameters:
+          type: 
+            value: Transformer
+          n_heads: 
+            value: 12
+          n_layers: 
+            value: 6
+          d_model: 
+            value: 768
+          key_dim: 
+            value: 512
+          feed_forward_hidden_dim: 
+            value: 512
+  batch_size: 
+    values: [12, 18]
+  learning_rate: 
+    value: 1.e-3
+

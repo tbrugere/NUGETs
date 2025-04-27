@@ -44,6 +44,9 @@ def argument_parser(parser):
     wandb_agent_subparser = subparsers.add_parser("wandb_agent", help="run the agent for a wandb sweep")
     wandb_agent_parser(wandb_agent_subparser)
 
+    wandb_sweep_subparser = subparsers.add_parser("wandb_sweep", help="start a wandb sweep.")
+    wandb_sweep_parser(wandb_sweep_subparser)
+
 def train_parser_common(parser):
     parser.add_argument("--profile", type=str, 
                         action=BooleanOptionalAction,  help="run profiler" )
@@ -71,6 +74,11 @@ def wandb_agent_parser(parser):
                         default=1)
     return parser
 
+@create_argument_parser(description="Start a wandb sweep")
+def wandb_sweep_parser(parser):
+    parser.add_argument("sweep_config", type=Path, help="the configuration for the sweep")
+    return parser
+
 def train_from_args(args):
     from nugets.models.model import Model
     model = Model.from_args(args)
@@ -96,6 +104,14 @@ def run_from_wandb_sweep():
 def run_wandb_sweep_agent(args):
     wandb.agent(sweep_id=args.sweep_id, count=args.n_runs, function=run_from_wandb_sweep)
 
+def start_wandb_sweep(sweep_config_file: Path):
+    import yaml
+    with sweep_config_file.open() as f:
+        sweep_config = yaml.safe_load(f)
+    config = Config.get()
+    sweep_id = wandb.sweep(sweep_config, project=config.wandb_project)
+    print(sweep_id)
+
 def main():
     parser: CustomArgumentParser = argument_parser()
     args= parser.parse_args()
@@ -109,7 +125,11 @@ def main():
         case "train":
             train_from_args(args)
         case "train_from_config":
-            train_from_config(args.model_config, profile=args.profile)
+            train_from_config(args.model_config, profile=args.profile, n_epochs=args.n_epochs)
+        case "wandb_sweep":
+            start_wandb_sweep(args.sweep_config)
+        case "wandb_agent":
+            run_wandb_sweep_agent(args)
         case other:
             log.error(f"Unrecognized subcommand {other}")
             sys.exit(1)   

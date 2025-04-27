@@ -2,6 +2,7 @@ from typing import Any, Generic, dataclass_transform, get_type_hints, overload, 
 
 from dataclasses import dataclass
 from logging import getLogger
+from ml_lib.misc.basic import NotSpecified
 
 from ml_lib.misc.data_structures import Maybe, SingletonMeta
 import torch
@@ -28,6 +29,11 @@ class Hyperparameter(Generic[T]):
         """Validate the hyperparameter value"""
         if not isinstance(val, self.type):
             raise ValueError(f"Expected {self.type}, got {type(val)}")
+
+    def deserialize_or_default(self, val: str|dict|NotSpecified):
+        if val is NotSpecified: 
+            return self.default.get()
+        return self.deserialize(val)
 
     def deserialize(self, val: str|dict) -> T:
         """Parse the hyperparameter value from a config"""
@@ -327,7 +333,7 @@ class BackBone(nn.Module, metaclass=BackBoneMeta):
         """Create a backbone from arguments"""
         kwargs = {}
         for attr_name, t in cls.list_hyperparameters(return_types=True):
-            kwargs[attr_name] = t.deserialize(args[attr_name])
+            kwargs[attr_name] = t.deserialize_or_default(args.get(attr_name, NotSpecified))
         return cls(**kwargs)
 
 

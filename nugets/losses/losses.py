@@ -10,3 +10,5 @@ class SinkhornLoss:
     
     def __call__(self, set1, set2):
         return self.loss(set1.data.to(torch.float32), set2.data.to(torch.float32), ptr_x=set1.ptr, ptr_y=set2.ptr).mean()
+
+

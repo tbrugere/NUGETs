@@ -226,11 +226,11 @@ class Model(pl.LightningModule):
     @classmethod
     def from_config_file(cls, config: Path):
         match config.suffix:
-            case "yaml":
+            case ".yaml":
                 import yaml
                 with config.open() as f:
                     config_dict = yaml.safe_load(f)
-            case "json":
+            case ".json":
                 import json
                 with config.open() as f:
                     config_dict = json.load(f)
