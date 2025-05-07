@@ -434,3 +434,27 @@ def configure_logging(packages, loglevel, logfile=None):
     for package in packages:
         our_log = getLogger(package)
         our_log.addHandler(handler)
+
+
+def compact_wandb_sweep_config(config_dict):
+    # unfinished. do not use
+
+    non_recursive_parameter_keywords = {"values", "value", "distribution", "probabilities", "min", "max", "mu", "sigma", "q"}
+    def is_nonrecursive_parameter(d: dict):
+        # a bit simplistic but 
+        return all(key in non_recursive_parameter_keywords for key in d)
+
+    def deserialize(parameter_object, inside_parameter=False):
+        # inside_parameter: whether this is a key-value dict representing parameters (as opposed to inside of a parameter)
+
+
+        match parameter_object:
+            case dict() if not inside_parameter:
+                return {key: deserialize(value, inside_parameter=True) 
+                        for key, value in parameter_object}
+            case _ if not inside_parameter:
+                raise ValueError("toplevel for parameters should be a dict")
+            case dict() if is_nonrecursive_parameter(parameter_object):
+                return parameter_object
+            # case à
+

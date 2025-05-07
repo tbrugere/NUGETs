@@ -44,7 +44,7 @@ def argument_parser(parser):
     wandb_agent_subparser = subparsers.add_parser("wandb_agent", help="run the agent for a wandb sweep")
     wandb_agent_parser(wandb_agent_subparser)
 
-    wandb_sweep_subparser = subparsers.add_parser("wandb_sweep", help="start a wandb sweep.")
+    wandb_sweep_subparser = subparsers.add_parser("wandb_sweep", help="start a wandb sweep. you could also use the `wandb sweep` command line, but this one allows for more compact config")
     wandb_sweep_parser(wandb_sweep_subparser)
 
 def train_parser_common(parser):
@@ -96,13 +96,17 @@ def train_from_config(config_file,*, profile=False, n_epochs):
 
 def run_from_wandb_sweep():
     from nugets.models.model import Model
+    config = Config.get()
+    wandb.init(project=config.wandb_project)
     config_dict = dict(wandb.config)
+    print(config_dict)
     n_epochs = config_dict.pop("n_epochs")
     model = Model.from_dict(config_dict)
     train_model(model, n_epochs=n_epochs)
 
 def run_wandb_sweep_agent(args):
-    wandb.agent(sweep_id=args.sweep_id, count=args.n_runs, function=run_from_wandb_sweep)
+    config = Config.get()
+    wandb.agent(sweep_id=args.sweep_id, count=args.n_runs, project=config.wandb_project,  function=run_from_wandb_sweep)
 
 def start_wandb_sweep(sweep_config_file: Path):
     import yaml

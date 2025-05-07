@@ -1,3 +1,4 @@
+wandb/
 docs/source/_autosummary
 .keys/
 config.yaml
