@@ -30,6 +30,7 @@ class MinimumAnnulusTask(Task):
         from nugets.models.encoder_decoders.shapefitting import MEAEncoderDecoder
         dataset_info = self.dataset_info()
         backbone_input_dim = backbone.get_input_dim()
+        backbone_output_dim = backbone.get_output_dim()
         input_dim = dataset_info["dim"]
         output_dim = input_dim + 2
         return MEAEncoderDecoder(input_dim=input_dim, 
@@ -48,6 +49,7 @@ class MinimumBallTask(Task):
         from nugets.model.encoder_decoders.shapefitting import MEBEncoderDecoder
         dataset_info = self.dataset_info()
         backbone_input_dim = backbone.get_input_dim()
+        backbone_output_dim = backbone.get_output_dim()
         input_dim = dataset_info["dim"]
         output_dim = input_dim + 1
         return MEAEncoderDecoder(input_dim=input_dim, 

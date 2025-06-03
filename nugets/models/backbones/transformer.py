@@ -13,7 +13,7 @@ class Transformer(BackBone):
     
     # for simplicity, key_dim is always set to d_model / n_heads (to have key = query = value )
     # key_dim: int = int_hyperparameter(description="number of dimensions for key, query"
-                                 # " and values in attention mechanism")
+    #                              " and values in attention mechanism")
     feed_forward_hidden_dim: int = int_hyperparameter(description="number of hidden dimensions"
                                  " in feed-forward blocks")
 
