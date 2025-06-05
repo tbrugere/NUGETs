@@ -19,7 +19,7 @@ class GAT(BackBone):
 
     """
     n_heads: int = int_hyperparameter(description="number of attention heads for GAT")
-    n_layers: int = int_hyperparameters(description="number of layers")
+    n_layers: int = int_hyperparameter(description="number of layers")
     input_dim: int = int_hyperparameter(description="input dimension")
     output_dim: int = int_hyperparameter(description = "output dimension")
 
@@ -27,4 +27,6 @@ class GAT(BackBone):
 
     # def __setup__(self):
     #     self.gnn = 
+    def get_input_dim(self): return self.input_dim
+    def get_output_dim(self): return self.output_dim
 

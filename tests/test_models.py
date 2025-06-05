@@ -6,11 +6,62 @@ import lightning as pl
 from nugets.models import BackBone, Model
 from nugets.models.backbones.transformer import Transformer
 from nugets.models.backbones.sumformer import Sumformer
-from nugets.tasks.dummy_tasks import SetIdentityTask
+from nugets.tasks.dummy_tasks import SetIdentityTask, SingleLabelDummyTask
+from nugets.pipeline.configs import Config
 
-def test_transformer():
+from pathlib import Path
+
+def test_transformer_with_labeled_set_task():
+    """
+    Tests training on labelled tasks as well as aggregation step from the BackBone
+    TODO: throw device-side assert when 'max' aggregation is used.  
+    """
+    assert issubclass(Model, pl.LightningModule)
+
+    path = Path('/home/sam/NUGETs/config.yaml')
+    Config.load(path)
+    global_config = Config.get()
+
+    task = SingleLabelDummyTask(
+            "GrowingCircles", 
+            dict(
+                dim=2,
+                min_points=10,
+                max_points=20,
+                radius="linear", 
+                length= 64, 
+                )
+            )
+    backbone: BackBone = Transformer(
+            n_heads=4,
+            n_layers=2,
+            d_model=64,
+        #   key_dim=16,
+            feed_forward_hidden_dim=256,
+            aggregation = 'mean' 
+            )
+    model = Model(backbone, task, batch_size=32, learning_rate=1e-3, debug_mode=True)
+    
+    additional_options = dict()
+    trainer = pl.Trainer(default_root_dir="workdir/", 
+                         max_epochs=1, 
+                         limit_train_batches=2,
+                         log_every_n_steps=1,
+                         gradient_clip_val=0, 
+                        #  precision="16-mixed",
+                         logger=False, 
+                         use_distributed_sampler=False,
+                         devices=1,
+                         **additional_options)
+
+    trainer.fit(model=model)
+
+def test_transformer_with_dummy_set_to_set_task():
 
     assert issubclass(Model, pl.LightningModule)
+    path = Path('/home/sam/NUGETs/config.yaml')
+    Config.load(path)
+    global_config = Config.get()
 
     task = SetIdentityTask(
             "GrowingCircles", 
@@ -28,25 +79,33 @@ def test_transformer():
             n_layers=2,
             d_model=64,
         #     key_dim=16,
-            feed_forward_hidden_dim=256, 
+            feed_forward_hidden_dim=256,
+            aggregation = 'none' 
             )
 
     model = Model(backbone, task, batch_size=32, learning_rate=1e-3, debug_mode=True)
     additional_options = dict()
+    # TODO: Issue with mixed-precision training -- needed for fast attention.
+    # TODO: Issue with num-workers, could have to do with debugger mode? 
     trainer = pl.Trainer(default_root_dir="workdir/", 
                          max_epochs=1, 
                          limit_train_batches=2,
                          log_every_n_steps=1,
-                         gradient_clip_val=0.01, 
-                         precision="16-mixed",
+                         gradient_clip_val=0, 
+                        #  precision="16-mixed",
                          logger=False, 
+                         use_distributed_sampler=False,
+                         devices=1,
                          **additional_options)
 
     trainer.fit(model=model)
 
-def test_sumformer():
+def test_sumformer_with_dummy_set_to_set_task():
     assert issubclass(Model, pl.LightningModule)
-
+    path = Path('/home/sam/NUGETs/config.yaml')
+    Config.load(path)
+    global_config = Config.get()
+    
     task = SetIdentityTask(
             "GrowingCircles", 
             dict(
@@ -63,4 +122,20 @@ def test_sumformer():
         d_model=64,
         feed_forward_hidden_dim=256
     )
+
+    model = Model(backbone, task, batch_size=32, learning_rate=1e-3, debug_mode=True)
+    additional_options = dict()
+    trainer = pl.Trainer(default_root_dir="workdir/", 
+                         max_epochs=1, 
+                         limit_train_batches=2,
+                         log_every_n_steps=1,
+                         gradient_clip_val=0, 
+                        #  precision="16-mixed",
+                         logger=False, 
+                         use_distributed_sampler=False,
+                         devices=1,
+                         **additional_options)
+
+    trainer.fit(model=model)
+
     

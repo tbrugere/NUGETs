@@ -1,11 +1,12 @@
 from torch_heterogeneous_batching.nn.transformer import Transformer as Transformer_nn
+from torch_geometric.nn.resolver import aggregation_resolver
 
-from nugets.models.backbone import BackBone, int_hyperparameter, model_attribute
+from nugets.models.backbone import BackBone, int_hyperparameter, hyperparameter, model_attribute
 from nugets.models.backbones.register import register
 
 @register
 class Transformer(BackBone):
-    """Transformer backbone"""
+    """Transformer backbone, vanilla transformer without any positional encodings"""
 
     n_heads: int = int_hyperparameter(description="number of heads for the self-attentions")
     n_layers: int = int_hyperparameter(description="number of layers")
@@ -17,6 +18,8 @@ class Transformer(BackBone):
     feed_forward_hidden_dim: int = int_hyperparameter(description="number of hidden dimensions"
                                  " in feed-forward blocks")
 
+
+    aggregation: str = hyperparameter(type=str, description="sequence aggregation function")
     transformer: Transformer_nn = model_attribute()
 
     def __setup__(self):
@@ -27,9 +30,14 @@ class Transformer(BackBone):
             key_dim=None,
             hidden_dim=self.feed_forward_hidden_dim,
         )
+        aggregation_args = {}
+        if self.aggregation != "none":
+            self.aggregation_fn = aggregation_resolver(self.aggregation, **aggregation_args)
 
     def forward(self, batch, return_reg_loss=False):
         del return_reg_loss # no regularization loss for transformer
+        if self.aggregation != "none":
+            return self.aggregation_fn(self.transformer(batch).data, ptr=batch.ptr), None
         return self.transformer(batch), None
 
     def get_input_dim(self): return self.d_model

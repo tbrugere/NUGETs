@@ -22,7 +22,6 @@ class Set_datapoint(Datapoint):
 class Set_batch(Datapoint):
     pointset: Batch
 
-
 @dataclass
 class Graph_datapoint(Set_datapoint):
     pointset: torch.Tensor
@@ -72,17 +71,18 @@ class DistanceBatch(Datapoint):
     distance: Tensor
 
 @dataclass
+class LabeledSetBatch(Datapoint):
+   pointset: Batch
+   label: Tensor
+
+@dataclass
 class LabeledSetDatapoint(Datapoint):
     pointset: Tensor
     label: Tensor
 
     @staticmethod
     def collate(batch):
-        pointset = Batch.from_list([p.pointset for p in points])
+        pointset = Batch.from_list([p.pointset for p in batch], order=1)
         label = torch.stack([p.label for p in batch])
-        return LabeledSetBatch(pointset=pointset, label=labels)
+        return LabeledSetBatch(pointset=pointset, label=label)
 
-@dataclass
-class LabeledSetBatch(Datapoint):
-   pointset: Batch
-   label: Tensor
