@@ -30,8 +30,8 @@ class Transformer(BackBone):
             key_dim=None,
             hidden_dim=self.feed_forward_hidden_dim,
         )
-        aggregation_args = {}
         if self.aggregation != "none":
+            aggregation_args = {}
             self.aggregation_fn = aggregation_resolver(self.aggregation, **aggregation_args)
 
     def forward(self, batch, return_reg_loss=False):

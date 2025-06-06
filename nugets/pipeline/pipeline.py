@@ -10,6 +10,9 @@ def train_model(model, *, profile=False, n_epochs: int):
 
     model_dir = model.get_dir()
 
+    ## cast model parameters to float32 (need this for PyTorch Lightning AMP)
+    model = model.to(torch.float32)
+
     global_config = Config.get()
     wandb_logger = WandbLogger(project=global_config.wandb_project, 
                                save_dir=model_dir, 

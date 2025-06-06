@@ -1,5 +1,6 @@
 from typing import Set
 from torch.utils.data import DataLoader
+from torch import float32
 
 import lightning as pl
 
@@ -10,6 +11,9 @@ from nugets.tasks.dummy_tasks import SetIdentityTask, SingleLabelDummyTask
 from nugets.pipeline.configs import Config
 
 from pathlib import Path
+
+# TODO: Issue with mixed-precision training -- needed for fast attention.
+# TODO: Issue with num-workers, could have to do with debugger mode? 
 
 def test_transformer_with_labeled_set_task():
     """
@@ -41,14 +45,14 @@ def test_transformer_with_labeled_set_task():
             aggregation = 'mean' 
             )
     model = Model(backbone, task, batch_size=32, learning_rate=1e-3, debug_mode=True)
-    
+    model = model.to(dtype=float32)
     additional_options = dict()
     trainer = pl.Trainer(default_root_dir="workdir/", 
-                         max_epochs=1, 
+                         max_epochs=2, 
                          limit_train_batches=2,
                          log_every_n_steps=1,
                          gradient_clip_val=0, 
-                        #  precision="16-mixed",
+                         precision="16-mixed",
                          logger=False, 
                          use_distributed_sampler=False,
                          devices=1,
@@ -82,13 +86,14 @@ def test_sumformer_with_labeled_set_task():
         aggregation='sum'
     )
     model = Model(backbone, task, batch_size=32, learning_rate=1e-3, debug_mode=True)
+    model = model.to(dtype=float32)
     additional_options = dict()
     trainer = pl.Trainer(default_root_dir="workdir/", 
                          max_epochs=1, 
                          limit_train_batches=2,
                          log_every_n_steps=1,
                          gradient_clip_val=0, 
-                        #  precision="16-mixed",
+                         precision="16-mixed",
                          logger=False, 
                          use_distributed_sampler=False,
                          devices=1,
@@ -126,14 +131,13 @@ def test_transformer_with_dummy_set_to_set_task():
 
     model = Model(backbone, task, batch_size=32, learning_rate=1e-3, debug_mode=True)
     additional_options = dict()
-    # TODO: Issue with mixed-precision training -- needed for fast attention.
-    # TODO: Issue with num-workers, could have to do with debugger mode? 
+    model = model.to(dtype=float32)
     trainer = pl.Trainer(default_root_dir="workdir/", 
                          max_epochs=1, 
                          limit_train_batches=2,
                          log_every_n_steps=1,
-                         gradient_clip_val=0, 
-                        #  precision="16-mixed",
+                         gradient_clip_val=0.01, 
+                         precision="16-mixed",
                          logger=False, 
                          use_distributed_sampler=False,
                          devices=1,

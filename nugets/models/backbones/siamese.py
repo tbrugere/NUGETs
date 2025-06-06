@@ -11,6 +11,8 @@ from nugets.models.backbone import (BackBone, int_hyperparameter, bool_hyperpara
 from nugets.models.backbones.register import register
 import nugets.losses.losses as Losses
 
+from torch_geometric.nn.resolver import aggregation_resolver
+
 
 @register
 class CoupledNetwork(BackBone):
@@ -38,6 +40,9 @@ class CoupledNetwork(BackBone):
 
     latent_dimension: int = int_hyperparameter(description="dimension of the latent space, set it to 0 to disable latent")
     p: int = int_hyperparameter(description="L_p distance function")
+
+    aggregation: str = hyperparameter(default='mean', type=str, description="aggregation function")
+
     decoder_distance: str = hyperparameter(type=str)
 
     encoder1: BackBone = model_attribute()
@@ -73,16 +78,23 @@ class CoupledNetwork(BackBone):
 
         self.decoder_loss_fn = getattr(Losses, self.decoder_distance)()
 
-            
+        if self.aggregation == "none":
+            raise ValueError('Aggregation function must not be none for Coupled or Siamese networks')
+        aggregation_args = {}
+        self.aggregation_fn = aggregation_resolver(self.aggregation, **aggregation_args)
 
-    
+            
     def forward(self, batch, return_reg_loss=False):
         set1, set2 = batch
         batch_size = set1.batch_size
         v1, _ = self.encoder1(set1) # for now, ignore regularization for encoders/decoders
         v2, _ = self.encoder2(set2)
-        v1 = self.encoder_projection_1(v1.mean())
-        v2 = self.encoder_projection_2(v2.mean())
+
+        v1 = self.aggregation_fn(v1.data, ptr=v1.ptr)
+        v2 = self.aggregation_fn(v2.data, ptr=v2.ptr)
+
+        v1 = self.encoder_projection_1(v1)
+        v2 = self.encoder_projection_2(v2)
 
         predicted_distances = torch.linalg.vector_norm(v1 - v2, ord=self.p, dim=-1)
 
