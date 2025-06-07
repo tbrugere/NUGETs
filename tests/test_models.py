@@ -12,7 +12,6 @@ from nugets.pipeline.configs import Config
 
 from pathlib import Path
 
-# TODO: Issue with mixed-precision training -- needed for fast attention.
 # TODO: Issue with num-workers, could have to do with debugger mode? 
 
 def test_transformer_with_labeled_set_task():
@@ -184,4 +183,6 @@ def test_sumformer_with_dummy_set_to_set_task():
 
     trainer.fit(model=model)
 
-    
+# TODO: Ashley+Mizuho, write a unit test for the set NN using the SingleLabelDummyTask
+def test_set_nn():
+    pass

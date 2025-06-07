@@ -130,4 +130,4 @@ class FrechetDistanceTask(DistanceTask):
     This class computes Frechet distance between ordered sets. 
     """
     def distance(self, set1, set2):
-        return 
+        raise NotImplementedError 

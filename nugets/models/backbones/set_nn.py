@@ -2,7 +2,7 @@ from torch_heterogeneous_batching.nn.sumformer import GlobalEmbedding as Set_nn
 from ml_lib.models.layers import MLP
 from torch import nn
 
-from nugets.models.backbone import BackBone, int_hyperparameter, other_backbone_hyperparameter, model_attribute
+from nugets.models.backbone import BackBone, int_hyperparameter, hyperparameter, other_backbone_hyperparameter, model_attribute
 from nugets.models.backbones.register import register
 
 @register
@@ -13,12 +13,12 @@ class SetNN(BackBone):
     """
 
     input_dim: int = int_hyperparameter(description="number of dimensions of the input")
-    output_dim: int = int_hyperparameter(description="dimension of the outpu")
+    output_dim: int = int_hyperparameter(description="dimension of the output")
 
     embedding_dim: int = int_hyperparameter(description="number of dimensions for the embedding MLP (latent dimension for h)")
     embedding_layers: int=int_hyperparameter(description="number of layers for the embedding MLP")
     embedding_hidden_dim: int=int_hyperparameter(description="hidden dimension for embedding MLP")
-    aggregation: str = other_backbone_hyperparameter(description="aggregation function")
+    aggregation: str = hyperparameter(default='mean', description="aggregation function")
 
     readout_hidden_dim: int=int_hyperparameter(description="hidden dimension for \phi")
     readout_layers: int=int_hyperparameter(description="number of layers for final readout MLP (\phi)")
@@ -38,6 +38,11 @@ class SetNN(BackBone):
                                batchnorm=False, 
                                activation=nn.LeakyReLU,
                                end_activation=False)
+    
+    def forward(self, batch, return_reg_loss=False):
+        del return_reg_loss 
+        global_embedding = self.set_nn(batch)
+        return self.readout_mlp(global_embedding)
 
     def get_input_dim(self): return self.input_dim
     def get_output_dim(self): return self.output_dim

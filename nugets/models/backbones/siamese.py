@@ -126,7 +126,7 @@ class Siamese(CoupledNetwork):
     encoder: InnerBackbone = other_backbone_hyperparameter("backbone for the encoder")
     decoder: InnerBackbone = other_backbone_hyperparameter("backbone for the decoder")
 
-
+    aggregation: str = hyperparameter(default='mean', type=str, description="aggregation function")
     latent_dimension: int = int_hyperparameter(description="dimension of the latent space, set it to 0 to disable latent")
     p: int = int_hyperparameter(description="L_p distance function")
     decoder_distance: str = hyperparameter(type=str)
