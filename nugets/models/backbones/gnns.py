@@ -1,10 +1,7 @@
 from typing import Callable
-from ml_lib.models.layers import MLP
-from torch_heterogeneous_batching import Batch
-from torch_heterogeneous_batching.batch import BatchIndicator
-from torch_heterogeneous_batching.nn.transformer import Transformer as Transformer_nn
 import torch
 from torch import nn
+from torch_geometric.nn import GAT as GAT_nn
 
 from nugets.models.backbone import (BackBone, int_hyperparameter, bool_hyperparameter, 
                 model_attribute, hyperparameter,  other_backbone_hyperparameter, InnerBackbone)
@@ -25,8 +22,16 @@ class GAT(BackBone):
 
     feed_forward_hidden_dim: int=int_hyperparameter(description="number of hidden dimensions")
 
-    # def __setup__(self):
-    #     self.gnn = 
+    def __setup__(self):
+        self.gat = GAT_nn(in_channels = input_dim, 
+                          out_channels = output_dim, 
+                          num_layers=n_layers, 
+                          heads=n_heads, 
+                          hidden_channels=feed_forward_hidden_dim)
+    
+    def forward(self, x, edge_index):
+        raise NotImplementedError("TODO: implement forward pass")
+
     def get_input_dim(self): return self.input_dim
     def get_output_dim(self): return self.output_dim
 

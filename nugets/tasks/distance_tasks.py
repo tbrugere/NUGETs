@@ -13,6 +13,9 @@ from torch import Tensor
 from torch_heterogeneous_batching import Batch
 from nugets.datasets.datapoint_types import DistanceDatapoint
 
+from shapely import LineString
+from shapely import frechet_distance
+
 from .task import Task
 from .register import register
 
@@ -130,4 +133,6 @@ class FrechetDistanceTask(DistanceTask):
     This class computes Frechet distance between ordered sets. 
     """
     def distance(self, set1, set2):
-        raise NotImplementedError 
+        curve1 = LineString(set1)
+        curve2 = LineString(set2)
+        return frechet_distance(curve1, curve2) 
