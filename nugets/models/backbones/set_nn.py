@@ -18,7 +18,7 @@ class SetNN(BackBone):
     embedding_dim: int = int_hyperparameter(description="number of dimensions for the embedding MLP (latent dimension for h)")
     embedding_layers: int=int_hyperparameter(description="number of layers for the embedding MLP")
     embedding_hidden_dim: int=int_hyperparameter(description="hidden dimension for embedding MLP")
-    aggregation: str = hyperparameter(default='mean', description="aggregation function")
+    aggregation: str = hyperparameter(type=str, default='mean', description="aggregation function")
 
     readout_hidden_dim: int=int_hyperparameter(description="hidden dimension for \phi")
     readout_layers: int=int_hyperparameter(description="number of layers for final readout MLP (\phi)")
@@ -28,7 +28,7 @@ class SetNN(BackBone):
 
     def __setup__(self):
         self.set_nn = Set_nn(input_dim=self.input_dim,
-                             embeddimg_dim=self.embedding_dim,
+                             embed_dim=self.embedding_dim,
                              hidden_dim=self.embedding_hidden_dim,
                              n_layers = self.embedding_layers,
                              aggregation=self.aggregation)
@@ -42,7 +42,7 @@ class SetNN(BackBone):
     def forward(self, batch, return_reg_loss=False):
         del return_reg_loss 
         global_embedding = self.set_nn(batch)
-        return self.readout_mlp(global_embedding)
+        return self.readout_mlp(global_embedding), None
 
     def get_input_dim(self): return self.input_dim
     def get_output_dim(self): return self.output_dim
