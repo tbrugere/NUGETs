@@ -12,9 +12,11 @@
         --backbone-encoder-d-model 768 \
         --backbone-encoder-key-dim 512 \
         --backbone-encoder-feed-forward-hidden-dim 512\
+        --backbone-aggregation mean
     --backbone-decoder-backbone Transformer \
         --backbone-decoder-n-heads 12 \
         --backbone-decoder-n-layers 6 \
         --backbone-decoder-d-model 768 \
         --backbone-decoder-key-dim 512 \
-        --backbone-decoder-feed-forward-hidden-dim 512
+        --backbone-decoder-feed-forward-hidden-dim 512 \
+        --backbone-aggregation mean

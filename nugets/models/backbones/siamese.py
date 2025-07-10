@@ -90,8 +90,10 @@ class CoupledNetwork(BackBone):
         v1, _ = self.encoder1(set1) # for now, ignore regularization for encoders/decoders
         v2, _ = self.encoder2(set2)
 
-        v1 = self.aggregation_fn(v1.data, ptr=v1.ptr)
-        v2 = self.aggregation_fn(v2.data, ptr=v2.ptr)
+        # v1 = self.aggregation_fn(v1.data, ptr=v1.ptr)
+        # v2 = self.aggregation_fn(v2.data, ptr=v2.ptr)
+        v1 = self.encoder_projection_1(v1.mean())
+        v2 = self.encoder_projection_1(v2.mean())
 
         v1 = self.encoder_projection_1(v1)
         v2 = self.encoder_projection_2(v2)

@@ -5,7 +5,7 @@ from torch import nn
 from nugets.models.backbone import BackBone, int_hyperparameter, hyperparameter, other_backbone_hyperparameter, model_attribute
 from nugets.models.backbones.register import register
 
-@register
+
 class SetNN(BackBone):
     """
     Neural network for point sets: \phi(AGGR_{x \in P}(h(x)))
@@ -18,7 +18,7 @@ class SetNN(BackBone):
     embedding_dim: int = int_hyperparameter(description="number of dimensions for the embedding MLP (latent dimension for h)")
     embedding_layers: int=int_hyperparameter(description="number of layers for the embedding MLP")
     embedding_hidden_dim: int=int_hyperparameter(description="hidden dimension for embedding MLP")
-    aggregation: str = hyperparameter(default='mean', description="aggregation function")
+    aggregation: str = hyperparameter(default='mean', description="aggregation function", type=str)
 
     readout_hidden_dim: int=int_hyperparameter(description="hidden dimension for \phi")
     readout_layers: int=int_hyperparameter(description="number of layers for final readout MLP (\phi)")

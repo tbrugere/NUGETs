@@ -12,4 +12,5 @@ export PYTHONPATH="$HOME/research/pytorch_heterogeneous_batching:$PYTHONPATH"
         --backbone-encoder-n-heads 12 \
         --backbone-encoder-n-layers 6 \
         --backbone-encoder-d-model 768 \
-        --backbone-encoder-feed-forward-hidden-dim 512
+        --backbone-encoder-feed-forward-hidden-dim 512\
+        --backbone-aggregation mean

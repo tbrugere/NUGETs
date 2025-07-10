@@ -19,7 +19,7 @@ class Transformer(BackBone):
                                  " in feed-forward blocks")
 
 
-    aggregation: str = hyperparameter(type=str, description="sequence aggregation function")
+    aggregation: str = hyperparameter(default='none', type=str, description="sequence aggregation function")
     transformer: Transformer_nn = model_attribute()
 
     def __setup__(self):

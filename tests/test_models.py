@@ -8,6 +8,7 @@ from nugets.models import BackBone, Model
 from nugets.models.backbones.transformer import Transformer
 from nugets.models.backbones.sumformer import Sumformer
 from nugets.tasks.dummy_tasks import SetIdentityTask, SingleLabelDummyTask
+from nugets.tasks.distance_tasks import WassersteinDistanceTask
 from nugets.pipeline.configs import Config
 
 from pathlib import Path
@@ -182,6 +183,22 @@ def test_sumformer_with_dummy_set_to_set_task():
                          **additional_options)
 
     trainer.fit(model=model)
+
+def test_siamese_nn():
+    path = Path('/home/sam/NUGETs/config.yaml')
+    Config.load(path)
+    global_config = Config.get()
+
+    encoder: BackBone =  Transformer(
+            n_heads=4,
+            n_layers=2,
+            d_model=64,
+        #     key_dim=16,
+            feed_forward_hidden_dim=256,
+            aggregation = 'none' 
+            )
+    
+    
 
 # TODO: Ashley+Mizuho, write a unit test for the set NN using the SingleLabelDummyTask
 def test_set_nn():

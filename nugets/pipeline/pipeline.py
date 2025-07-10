@@ -52,6 +52,7 @@ def train_model(model, *, profile=False, n_epochs: int):
                          # detect_anomaly=True, 
                          # profiler="simple", 
                          callbacks=[checkpoint_callback], 
+                         use_distributed_sampler=False,
                          **additional_options
                          )
     trainer.fit(model=model, )

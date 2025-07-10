@@ -21,6 +21,7 @@ dependencies = [
     "google-cloud-storage>=3.1.0",
     "gcsfs>=2025.2.0",
     "fsspec[gcs]>=2025.2.0",
+    "shapely>=2.1.1",
 ]
 
 [dependency-groups]
