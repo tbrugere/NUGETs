@@ -1,0 +1,48 @@
+FROM --platform=linux/arm64 python:3.11-slim AS python_base
+
+####################### Build stage ###############
+FROM --platform=linux/arm64 nvidia/cuda:12.9.1-devel-ubuntu24.04 AS builder
+ENV CUDA_HOME=/usr/local/cuda
+
+# Install uv 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+#     --mount=type=cache,target=/var/lib/apt,sharing=locked \
+RUN LANGUAGE=en apt-get update && \
+    apt-get install -y git g++ python3 python-is-python3 build-essential python3-dev
+
+WORKDIR /app
+RUN mkdir -p /app/workdir
+
+# Install dependencies
+# fixes a bug where some packages that haven't been updated to recent versions
+# of python build system need setuptools and/or torch to be installed so they can be built
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-build-isolation --only-group build-tools
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-build-isolation --no-dev 
+
+
+########################### Final image ##################################
+
+FROM nvidia/cuda:12.9.1-cudnn-runtime-ubi9
+ENV CUDA_HOME=/usr/local/cuda
+# Python setup
+COPY --from=python_base /usr/local/bin/ /usr/local/bin/
+COPY --from=python_base /usr/local/lib/ /usr/local/lib/
+WORKDIR /app
+
+# Copy the requirements file and code
+ADD . /app
+# Install uv 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+# Copy the python packages from the build image
+COPY --from=builder /app/.venv /app/.venv
+
+CMD ./nugets.sh wandb_sweep $SWEEP_ID
