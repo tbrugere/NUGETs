@@ -41,7 +41,13 @@ Then to build the container image, just use the following:
 
 .. code-block:: console
 
-   $ docker buildx build -t nugets-slim --platform linux/arm64 .
+   $ docker buildx build -t nugets --platform linux/arm64 .
+
+Or, to build using Dockerfile.slimmer
+
+.. code-block:: console
+
+   $ docker buildx build -t nugets-slim -f Dockerfile.slimmer --platform linux/arm64 .
 
 To run it, follow `these instructions <https://containers-at-tacc.readthedocs.io/en/latest/singularity/01.singularity_basics.html>` 
 
