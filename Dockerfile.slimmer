@@ -23,6 +23,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project --no-build-isolation --only-group build-tools
 
+RUN echo $CUDA_HOME
+
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
@@ -33,15 +35,18 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 FROM nvidia/cuda:12.9.1-cudnn-runtime-ubi9
 ENV CUDA_HOME=/usr/local/cuda
-# Python setup
-COPY --from=python_base /usr/local/bin/ /usr/local/bin/
-COPY --from=python_base /usr/local/lib/ /usr/local/lib/
-WORKDIR /app
 
 # Copy the requirements file and code
-ADD . /app
+WORKDIR /app
+RUN mkdir -p /app/workdir
+
+# note: I am not copying docs and tests
+COPY nugets nugets.sh CGAL config.yaml pyproject.toml uv.lock static_configs /app
+
 # Install uv 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+# Install python using uv
+RUN uv python install $PYTHON_VERSION
 # Copy the python packages from the build image
 COPY --from=builder /app/.venv /app/.venv
 

@@ -1,0 +1,67 @@
+# Dockerfile with all optimizations mentioned in the other.
+# Note one could maybe still optimize this by using the --compile-bytecode 
+# option for uv, and not even including the source code in the final image.
+# see 
+# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+# and https://docs.astral.sh/uv/guides/integration/docker/#non-editable-installs
+# but that would make debugging more annoying
+
+# To run, you need to provide the SWEEP_ID with --env
+# RN the config.yaml is included in the image, but that might be a terrible idea
+# from a config standpoint. maybe exclude it and bind-mount it instead
+
+ARG PYTHON_VERSION=3.11
+####################### Build stage ###############
+FROM nvidia/cuda:12.9.1-devel-ubi9 AS build_env
+
+# Install uv 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+#     --mount=type=cache,target=/var/lib/apt,sharing=locked \
+RUN yum update -y && yum install -y gcc gcc-c++ make git
+
+RUN uv python install $PYTHON_VERSION
+
+WORKDIR /app
+FROM build_env AS builder
+
+ENV CUDA_HOME=/usr/local/cuda
+
+# Install dependencies
+# fixes a bug where some packages that haven't been updated to recent versions
+# of python build system need setuptools and/or torch to be installed so they can be built
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock,ro \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml,ro \
+    uv sync --locked --no-install-project --only-group build-tools
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock,ro \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml,ro \
+    CUDA_HOME=/usr/local/cuda uv sync --locked --no-install-project --no-build-isolation --no-dev 
+
+
+########################### Final image ##################################
+
+FROM nvidia/cuda:12.9.1-cudnn-runtime-ubi9 AS nugets_image
+ENV CUDA_HOME=/usr/local/cuda
+
+# Copy the requirements file and code
+WORKDIR /app
+RUN mkdir -p /app
+RUN mkdir -p /app/workdir
+
+# note: I am not copying docs and tests
+COPY nugets nugets.sh CGAL pyproject.toml uv.lock static_configs /app
+
+# Install uv 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+# Install python using uv
+RUN uv python install $PYTHON_VERSION
+# Copy the python packages from the build image
+COPY --from=builder /app/.venv /app/.venv
+
+FROM nugets_image AS nugets_worker
+
+CMD ./nugets.sh wandb_sweep $SWEEP_ID

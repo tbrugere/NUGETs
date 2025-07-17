@@ -41,15 +41,21 @@ Then to build the container image, just use the following:
 
 .. code-block:: console
 
-   $ docker buildx build -t nugets --platform linux/arm64 .
+   $ docker buildx build -t nugets --platform linux/arm64 . --load
 
 Or, to build using Dockerfile.slimmer
 
 .. code-block:: console
 
-   $ docker buildx build -t nugets-slim -f Dockerfile.slimmer --platform linux/arm64 .
+   $ docker buildx build -t nugets-slim -f Dockerfile.slimmer --platform linux/arm64 . --load
+
 
 To run it, follow `these instructions <https://containers-at-tacc.readthedocs.io/en/latest/singularity/01.singularity_basics.html>` 
+
+Note that to run, you need to provide
+
+* The worker id with ``--env SWEEP_ID=<the sweep id>``
+* The config with ``--mount type=bind,source=path_to_the_config,target=/app/config.yaml,ro`` (i do not include it in the image because that would be terrible from a security standpoint since it has api keys.)
 
 The simplest to get the image there should be a private docker registry (most cloud services offer that, if you have some credits), for example `in gcp the service is part of artifact registry <https://cloud.google.com/artifact-registry/docs>`. See `the doc on how to push images <https://cloud.google.com/artifact-registry/docs/docker/pushing-and-pulling>`.
 
