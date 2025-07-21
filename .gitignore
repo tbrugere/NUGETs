@@ -1,3 +1,4 @@
+package_cache/
 wandb/
 docs/source/_autosummary
 .keys/
