@@ -49,6 +49,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock,ro \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml,ro \
+    --mount=type=bind,source=package_cache,target=package_cache,ro \
     uv sync --locked --no-install-project --no-build-isolation --no-dev 
 
 
