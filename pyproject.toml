@@ -1,7 +1,7 @@
 [project]
 name = "nugets"
 version = "0.1.0"
-description = "NeUral GEomeTry — benchmarking neural networks on geometric tasks"
+description = "NeUral GEomeTry Suite — benchmarking neural networks on geometric tasks"
 readme = "README.rst"
 requires-python = ">=3.11"
 authors = [{name="Tristan Brugère",  email="<tbrugere@ucsd.edu>"}, 
@@ -9,13 +9,8 @@ authors = [{name="Tristan Brugère",  email="<tbrugere@ucsd.edu>"},
 dependencies = [
     "setuptools>=75.8.0",
     "lightning>=2.5.0.post0",
-    "ml-lib",
-    "torch-heterogeneous-batching",
-    "torch>=2.5.1",
-    "torch_scatter",
     "torch_geometric",
     "pot>=0.9.5",
-    "geomloss[full]>=0.2.6",
     "pyyaml>=6.0.2",
     "pydantic>=2.10.6",
     "wandb>=0.19.6",
@@ -24,6 +19,10 @@ dependencies = [
     "fsspec[gcs]>=2025.2.0",
     "shapely>=2.1.1",
     "flash-attn",
+    "ml-lib",
+    "torch-heterogeneous-batching",
+    "torch_scatter",
+    "geomloss[full]>=0.2.6",
 ]
 
 [dependency-groups]
@@ -54,6 +53,20 @@ build-tools = [
     "torch>=2.5.1",
 ]
 
+[project.optional-dependencies]
+cu124 = [
+    "torch==2.6.0+cu124; sys_platform == 'linux' and platform_machine == 'x86_64'", 
+    # no need to use pre built, just build it from source...
+    # there is no aarch64 build anyway
+    # "torch_scatter==2.1.2+pt26cu124", 
+]
+
+cu128 = [
+    "torch==2.7.0+cu128", 
+    # "torch_scatter==2.1.2+pt27cu128", 
+]
+
+
 [tool.sphinx-pyproject]
 extensions = [
     'sphinx.ext.autodoc',
@@ -70,45 +83,65 @@ venvPath = "."
 venv = ".venv"
 
 [tool.uv]
-required-environments = [
-    "sys_platform == 'linux' and platform_machine == 'aarch64'",
-    "sys_platform == 'linux' and platform_machine == 'x86_64' and python_version == '3.13'",
+conflicts = [
+    [{extra="cu128"}, {extra="cu124"}]
+    ]
+environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "sys_platform == 'linux' and platform_machine == 'aarch64' and python_version == '3.13'",
 ]
+index-strategy = "unsafe-best-match"
+# no-build-isolation-package = ["flash-attn", "torch-scatter"]
 
 [tool.uv.sources]
 ml-lib = { git = "https://github.com/tbrugere/ml_lib.git", rev = "devel" }
 torch-heterogeneous-batching = { git = "https://github.com/tbrugere/pytorch_heterogeneous_batching.git", rev = "main" }
 geomloss = { git = "https://github.com/tbrugere/geomloss", rev = "batching" }
-triton = [
-    { index= "torch-cu124", marker="platform_machine == 'amd64'"}, 
-    { index= "torch-cu128", marker="platform_machine == 'aarch64'" }
-]
-torch = [
-    { index= "torch-cu124", marker="platform_machine == 'amd64'"}, 
-    { index = "torch-cu128", marker="platform_machine == 'aarch64'" }
-]
-flash-attn = [
-  { path= "./package_cache/flash_attn-2.8.1-py313-cp313-linux_aarch64.whl", marker="platform_machine == 'aarch64'"}, 
-    ]
-
-# torch_scatter = [
-#     { url = "https://data.pyg.org/whl/torch-2.5.0%2Bcu124/torch_scatter-2.1.2%2Bpt25cu124-cp311-cp311-linux_x86_64.whl", marker="sys_platform == 'linux' and platform_machine == 'x86_64'" }
+# triton = [
+#     { index= "torch-cu124", marker="platform_machine == 'amd64'"}, 
+#     { index= "torch-cu128", marker="platform_machine == 'aarch64'" }
 # ]
+torch = [
+    { index= "torch-cu124", extra="cu124"}, 
+    { index = "torch-cu128", extra="cu128" }
+]
+flash_attn = [
+    {index = "local", marker = "platform_machine == 'aarch64'"}
+]
+# # torch_scatter = [
+# #     { url = "https://data.pyg.org/whl/torch-2.5.0%2Bcu124/torch_scatter-2.1.2%2Bpt25cu124-cp311-cp311-linux_x86_64.whl", marker="sys_platform == 'linux' and platform_machine == 'x86_64'" }
+# # ]
 
 [[tool.uv.index]]
-name = "torch-cu124"
-url = "https://download.pytorch.org/whl/cu124"
-explicit = true
+# this repo has all the torch version
+name = "local"
+url = "http://localhost:20284/simple"
+
+
+# [[tool.uv.index]]
+# # this repo has all the torch version
+# name = "torch-full"
+# url = "https://download.pytorch.org/whl/"
 
 [[tool.uv.index]]
 name = "torch-cu128"
 url = "https://download.pytorch.org/whl/cu128"
-explicit = true
+
+# [[tool.uv.index]]
+# name = "pytorch-scatter-cu128"
+# url = "https://data.pyg.org/whl/torch-2.7.0%2Bcu128.html"
 
 [[tool.uv.index]]
-name = "pytorch-scatter-cu124"
-url = "https://data.pyg.org/whl/torch-2.5.0+cu124.html"
-explicit = true
+name = "torch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+
+# [[tool.uv.index]]
+# name = "pytorch-scatter-cu124"
+# url = "https://data.pyg.org/whl/torch-2.6.0%2Bcu124.html"
+
+[tool.uv.extra-build-dependencies]
+torch-scatter = ["torch"]
+flash-attn = ["torch"]
 
 [[tool.uv.dependency-metadata]]
 name="flash-attn"

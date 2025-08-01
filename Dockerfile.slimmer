@@ -10,7 +10,7 @@
 # RN the config.yaml is included in the image, but that might be a terrible idea
 # from a config standpoint. maybe exclude it and bind-mount it instead
 
-ARG PYTHON_VERSION=3.11
+ARG PYTHON_VERSION=3.13
 ####################### Build stage ###############
 FROM nvidia/cuda:12.9.1-devel-ubi9 AS build_env
 
@@ -31,19 +31,13 @@ ENV CUDA_HOME=/usr/local/cuda
 # Install dependencies
 # fixes a bug where some packages that haven't been updated to recent versions
 # of python build system need setuptools and/or torch to be installed so they can be built
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock,ro \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml,ro \
-    --mount=type=bind,source=package_cache,target=package_cache,ro \
-    uv sync --locked --no-install-project --only-group build-tools
-
 ARG MAX_JOBS=16
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock,ro \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml,ro \
     --mount=type=bind,source=package_cache,target=package_cache,ro \
-    CUDA_HOME=/usr/local/cuda uv sync --locked --no-install-project --no-build-isolation --no-dev 
+     ./run_with_local_index.sh uv sync --locked --no-install-project --no-dev --extra cu128
 
 
 ########################### Final image ##################################
