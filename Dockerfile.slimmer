@@ -52,7 +52,12 @@ RUN mkdir -p /app
 RUN mkdir -p /app/workdir
 
 # note: I am not copying docs and tests
-COPY nugets nugets.sh CGAL pyproject.toml uv.lock static_configs /app
+# COPY nugets nugets_production.sh CGAL pyproject.toml uv.lock static_configs /app
+COPY nugets /app/nugets
+COPY CGAL /app/CGAL
+COPY static_configs /app/static_configs
+COPY nugets_production.sh pyproject.toml uv.lock /app
+
 
 # Install uv 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -63,4 +68,4 @@ COPY --from=builder /app/.venv /app/.venv
 
 FROM nugets_image AS nugets_worker
 
-CMD ./nugets.sh wandb_sweep $SWEEP_ID
+CMD ./nugets_production.sh wandb_sweep $SWEEP_ID
