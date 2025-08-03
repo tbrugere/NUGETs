@@ -86,3 +86,23 @@ class LabeledSetDatapoint(Datapoint):
         label = torch.stack([p.label for p in batch])
         return LabeledSetBatch(pointset=pointset, label=label)
 
+@dataclass
+class LabeledGraphDatapoint(Graph_datapoint):
+    label: Tensor
+
+    @classmethod
+    def collate(cls, points):
+        pointsets = [p.pointset for p in points]
+        edges = [p.edges for p in points]
+        labels = [p.label for p in points]
+
+        set_batch = Batch.from_list(pointsets, order=1)
+        set_ptr = set_batch.ptr
+        edges_batch = torch.cat([e + offset for e, offset in zip(edges, set_ptr)], dim=0)
+        label_batch = torch.stack(labels)
+
+        return LabeledGraphBatch(pointset=set_batch, edges=edges_batch, label=label_batch)
+
+@dataclass
+class LabeledGraphBatch(Graph_batch):
+    label: Tensor

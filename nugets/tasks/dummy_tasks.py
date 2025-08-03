@@ -14,8 +14,8 @@ from torch_heterogeneous_batching import Batch
 from .task import Task
 from .register import register
 from nugets.models.backbone import BackBone
-from nugets.models.encoder_decoders.identity import SetIdentityEncoderDecoder, SingleLabelSetEncoderDecoder
-from nugets.datasets.datapoint_types import LabeledSetBatch, LabeledSetDatapoint
+from nugets.models.encoder_decoders.identity import SetIdentityEncoderDecoder, SingleLabelSetEncoderDecoder, SingleLabelGraphEncoderDecoder
+from nugets.datasets.datapoint_types import LabeledSetBatch, LabeledSetDatapoint, LabeledGraphDatapoint
 
 
 @register
@@ -73,7 +73,38 @@ class SingleLabelDummyTask(Task):
                                             backbone_output_dim=backbone_output_dim, 
                                             output_dim=output_dim)
 
-    
+class SingleGraphLabel(Transform):
+    def __getitem__(self, idx):
+        graph = self.inner[idx].graph
+        label = tensor(0)
+        return LabeledGraphDatapoint(graph=graph, label=label)
+
+    def __len__(self):
+        return len(self.inner)
+
+
+@register
+
+class SingleLabelGraphDummyTask(Task):
+    def process_dataset(self, dataset):
+        return SingleGraphLabel()(dataset)
+
+    def datapoint_type(self):
+        return LabeledGraphDatapoint
+
+    def compute_metrics(self, datapoint, results):
+        del datapoint, results
+        return dict(error=tensor(1.0))
+
+    def get_encoder_decoder(self, backbone: BackBone):
+        input_dim = self.dataset_info()["dim"]
+        backbone_input_dim = backbone.get_inut_dim()
+        backbone_output_dim = backbone.get_output_dim()
+        output_dim = 2
+        return SingleLabelGraphEncoderDecoder(input_dim=input_dim, 
+                                            backbone_input_dim=backbone_input_dim, 
+                                            backbone_output_dim=backbone_output_dim, 
+                                            output_dim=output_dim)
     
 
     
