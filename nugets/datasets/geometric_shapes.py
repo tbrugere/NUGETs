@@ -104,3 +104,54 @@ class GrowingCircles(GeneratedDataset[Set_datapoint]):
 
     def dataset_parameters(self):
         return {'dim': self.dim, 'min_points': self.min_points, 'max_points': self.max_points}
+
+
+######################################## graph dataset
+@dataset_register
+class RandomLabeledGraph(GeneratedDataset[Graph_datapoint]):
+    """
+    Random Graph dataset with node features and binary graph labels.
+
+    Nodes are sampled randomly in feature space, and edges are fully connected
+    (without self-loops). Labels are assigned randomly.
+    """
+
+    datatype = Graph_datapoint
+
+    dim: int
+    min_points: int
+    max_points: int
+
+    def __init__(self, dim=5, min_points=10, max_points=20, **kwargs):
+        super().__init__(**kwargs)
+        self.dim = dim
+        self.min_points = min_points
+        self.max_points = max_points
+
+    def prepare(self):
+        pass
+
+    def generate_item(self, rng):
+        n_points = rng.integers(self.min_points, self.max_points + 1)
+        points = rng.normal(0, 1, size=(n_points, self.dim))
+        points = torch.tensor(points, dtype=torch.float32)
+
+        # Fully connected edges (without self-loops)
+        sender, receiver = torch.meshgrid(torch.arange(n_points), torch.arange(n_points), indexing="ij")
+        edge_index = torch.stack([sender.flatten(), receiver.flatten()], dim=0)
+        mask = edge_index[0] != edge_index[1]
+        edge_index = edge_index[:, mask].T  # shape: [E, 2]
+
+        # Optional: one-hot edge features or dummy edge weights (not used here)
+
+        # Random binary label (0 or 1)
+        label = torch.tensor(rng.integers(0, 2), dtype=torch.long)
+
+        return Graph_datapoint(pointset=points, edges=edge_index, label=label)
+
+    def dataset_parameters(self):
+        return {
+            'dim': self.dim,
+            'min_points': self.min_points,
+            'max_points': self.max_points,
+        }
