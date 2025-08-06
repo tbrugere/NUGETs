@@ -34,10 +34,9 @@ ENV CUDA_HOME=/usr/local/cuda
 ARG MAX_JOBS=16
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock,ro \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml,ro \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml,ro \
-    --mount=type=bind,source=package_cache,target=package_cache,ro \
+    --mount=type=bind,source=uv.lock,target=/app/uv.lock,ro \
+    --mount=type=bind,source=pyproject.toml,target=/app/pyproject.toml,ro \
+    --mount=type=bind,source=package_cache,target=/app/package_cache,ro \
      ./package_cache/run.sh uv sync --locked --no-install-project --no-dev --extra cu128
 
 
