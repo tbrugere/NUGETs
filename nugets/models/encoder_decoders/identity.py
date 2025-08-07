@@ -53,7 +53,7 @@ class SingleLabelSetEncoderDecoder(EncoderDecoderWithProjection):
 class SingleLabelGraphEncoderDecoder(EncoderDecoderWithProjection):
     """ Single-label graph classification encoder-decoder"""
 
-    def __init__(self.input_dim: int, backbone_input_dim: int, backbone_output_dim: int, output_dim: int):
+    def __init__(self, input_dim: int, backbone_input_dim: int, backbone_output_dim: int, output_dim: int):
         super().__init__(input_dim, backbone_input_dim, backbone_output_dim, output_dim)
         self.loss = CrossEntropyLoss()
 
