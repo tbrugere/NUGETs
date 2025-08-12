@@ -5,7 +5,7 @@ import torch
 from ml_lib.datasets.datasets.randomly_generated_dataset import GeneratedDataset
 
 from nugets.datasets.register import register as dataset_register
-from .datapoint_types import Point_datapoint, Set_datapoint
+from .datapoint_types import Point_datapoint, Set_datapoint, Graph_datapoint
 
 
 ################################## point-level datasets

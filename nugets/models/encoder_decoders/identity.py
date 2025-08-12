@@ -4,7 +4,7 @@ from torch.nn import CrossEntropyLoss
 from torch_heterogeneous_batching import Batch
 from torch_heterogeneous_batching.nn.losses import BatchMSELoss
 
-from nugets.datasets.datapoint_types import Set_batch, Point_datapoint, LabeledSetBatch, Graph_datapoint
+from nugets.datasets.datapoint_types import Set_batch, Point_datapoint, LabeledSetBatch, Graph_datapoint, LabeledGraphDatapoint
 from nugets.models.model import EncoderDecoderWithProjection
 
 class PointIdentityEncoderDecoder(EncoderDecoderWithProjection):
