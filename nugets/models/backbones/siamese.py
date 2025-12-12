@@ -87,22 +87,19 @@ class CoupledNetwork(BackBone):
     def forward(self, batch, return_reg_loss=False):
         set1, set2 = batch
         batch_size = set1.batch_size
+        #print("Batch size(forward, siamese.py):", batch_size)
         v1, _ = self.encoder1(set1) # for now, ignore regularization for encoders/decoders
         v2, _ = self.encoder2(set2)
 
-        # v1 = self.aggregation_fn(v1.data, ptr=v1.ptr)
-        # v2 = self.aggregation_fn(v2.data, ptr=v2.ptr)
         v1 = self.encoder_projection_1(v1.mean())
-        v2 = self.encoder_projection_1(v2.mean())
-
-        v1 = self.encoder_projection_1(v1)
-        v2 = self.encoder_projection_2(v2)
+        v2 = self.encoder_projection_2(v2.mean())
 
         predicted_distances = torch.linalg.vector_norm(v1 - v2, ord=self.p, dim=-1)
-
+        #print("got to predicted distances")
 
         if self.reconstruct_input and self.training:
             assert self.decoder1 is not None and self.decoder2 is not None
+            #print("decoder type", type(self.decoder1))
             out1_data = self.decoder1(v1)\
                     .reshape(batch_size * self.decoder_n_points, self.encoder1.get_input_dim())
             out2_data = self.decoder2(v2)\
@@ -141,8 +138,8 @@ class Siamese(CoupledNetwork):
     decoder_projection_1: nn.Module = model_attribute()
     decoder_projection_2: nn.Module = model_attribute()
 
-    decoder1: BackBone = model_attribute()
-    decoder2: BackBone = model_attribute()
+    decoder1: MLP|None = model_attribute()
+    decoder2: MLP|None = model_attribute()
 
 
     def __setup__(self):
@@ -155,3 +152,4 @@ class Siamese(CoupledNetwork):
         else: 
             self.encoder_projection_1 = self.encoder_projection_2 = nn.Identity()
             self.decoder_projection_1 = self.decoder_projection_2 = nn.Identity()
+

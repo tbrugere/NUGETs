@@ -138,6 +138,7 @@ class Model(pl.LightningModule):
         if reg_loss is not None: 
             self.log('train_reg_loss', reg_loss)
             loss = loss + reg_loss
+        loss = loss.to(torch.float32)
         return loss
 
     def validation_step(self, batch, batch_idx):

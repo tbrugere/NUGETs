@@ -65,6 +65,7 @@ class SingleLabelDummyTask(Task):
     def get_encoder_decoder(self, backbone: BackBone):
 
         input_dim = self.dataset_info()["dim"]
+        print("input dimension", input_dim)
         backbone_input_dim = backbone.get_input_dim()
         backbone_output_dim = backbone.get_output_dim()
         output_dim = 2

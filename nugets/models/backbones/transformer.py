@@ -38,6 +38,7 @@ class Transformer(BackBone):
         del return_reg_loss # no regularization loss for transformer
         if self.aggregation != "none":
             return self.aggregation_fn(self.transformer(batch).data, ptr=batch.ptr), None
+        
         return self.transformer(batch), None
 
     def get_input_dim(self): return self.d_model

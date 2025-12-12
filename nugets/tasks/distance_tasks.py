@@ -97,13 +97,21 @@ class DistanceTask(Task):
         gt = datapoint.distance  
         batch_error = torch.abs(results - gt)
         relative_error = torch.clip(batch_error / gt, 1e3)
+        re = batch_error/(gt + 1e-3)
         mean_error = batch_error.mean()
         mean_relative_error = relative_error.mean()
+        mean_relative_error = re.mean()
         return dict(
             mean_error=mean_error, 
             mean_relative_error=mean_relative_error, 
         )
 
+@register 
+class TestDistanceTask(DistanceTask):
+    def distance(self, set1, set2):
+        a = torch.ones(5)
+        b = torch.zeros(5)
+        return torch.sum(a - b, dtype=torch.float32)
 
 @register
 class WassersteinDistanceTask(DistanceTask):

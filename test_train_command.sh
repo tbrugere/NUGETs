@@ -1,6 +1,6 @@
 #!/bin/bash
-export PYTHONPATH="$HOME/research/pytorch_heterogeneous_batching:$PYTHONPATH"
-.venv/bin/python -m nugets train \
+export PYTHONPATH="$WORK/research/pytorch_heterogeneous_batching:$PYTHONPATH"
+python -m nugets train \
     --batch-size 12 --learning-rate 1.e-6 \
     --task "WassersteinDistanceTask" \
     --dataset workdir/datasets/configs/dummy_growing_circles.yaml \

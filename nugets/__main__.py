@@ -91,6 +91,9 @@ def train_from_dict(config, **kwargs):
 
 def train_from_config(config_file,*, profile=False, n_epochs):
     from nugets.models.model import Model
+    import torch
+    import torch_scatter
+    #print("\n\nTorch scatter has cuda", torch_scatter.is_compiled_with_cuda(), "\n\n")
     model = Model.from_config_file(config_file)
     train_model(model, profile=profile, n_epochs=n_epochs)
 
@@ -99,7 +102,6 @@ def run_from_wandb_sweep():
     config = Config.get()
     wandb.init(project=config.wandb_project)
     config_dict = dict(wandb.config)
-    print(config_dict)
     n_epochs = config_dict.pop("n_epochs")
     model = Model.from_dict(config_dict)
     train_model(model, n_epochs=n_epochs)
@@ -119,12 +121,12 @@ def start_wandb_sweep(sweep_config_file: Path):
 def main():
     parser: CustomArgumentParser = argument_parser()
     args= parser.parse_args()
+    print("config", args.config)
     Config.load(args.config)
     config = Config.get()
     configure_logging(["nugets"], loglevel=args.loglevel if args.loglevel is not None else config.loglevel, 
                       logfile=args.logfile)
     wandb.login(key=config.wandb_key)
-    # print(args)
     match args.subcommand:
         case "train":
             train_from_args(args)

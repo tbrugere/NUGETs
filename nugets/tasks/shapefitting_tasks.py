@@ -15,7 +15,7 @@ from nugets.datasets.datapoint_types import DistanceDatapoint
 
 from .task import Task
 from .register import register
-from CGAL import CGAL_Bounding_volumes as cgal_bv
+#from CGAL import CGAL_Bounding_volumes as cgal_bv
 
 
 class MinimumAnnulusTask(Task):

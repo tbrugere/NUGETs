@@ -2,7 +2,7 @@ task:
   type: WassersteinDistanceTask
   dataset: GrowingCircles
   dataset_config:
-    length: 100
+    length: 1000
 backbone:
   type: CoupledNetwork
   latent_dimension: 256
@@ -10,7 +10,7 @@ backbone:
   reconstruct_input: False
   decoder_distance: SinkhornLoss
   encoder: 
-    type: Transformer
+    type: Sumformer
     n_heads: 2
     n_layers: 2
     d_model: 768

@@ -1,4 +1,4 @@
-name: test_sweep
+name: Wasserstein-GrowingCircles-Transformer
 metric:
   goal: minimize
   name: mean_error
@@ -13,6 +13,10 @@ parameters:
       dataset_config:
         parameters:
           length: 
+            values: [3000]
+          min_points:
+            values: [50]
+          max_points: 
             values: [100]
   backbone:
     parameters:
@@ -29,9 +33,9 @@ parameters:
       encoder: 
         parameters:
           type: 
-            values: [Transformer, Sumformer]
+            values: [Transformer]
           n_heads: 
-            values: [1, 2, 3]
+            values: [1, 2, 3, 4]
           n_layers: 
             values: [1, 2, 3]
           d_model: 
@@ -55,9 +59,9 @@ parameters:
           feed_forward_hidden_dim: 
             values: [256]
   batch_size: 
-    values: [12, 18]
+    values: [64, 128]
   learning_rate: 
     value: 0.001
   n_epochs: 
-    value: 100
+    value: 1000
 

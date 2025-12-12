@@ -1,0 +1,38 @@
+name: test_sweep
+method: grid
+metric:
+  name: mean_error
+  goal: minimize
+
+parameters:
+  task.type:                {value: WassersteinDistanceTask}
+  task.dataset:             {value: GrowingCircles}
+  task.dataset_config.length:
+    values: [100, 150]
+
+  backbone.type:            {value: CoupledNetwork}
+  backbone.latent_dimension:
+    values: [124, 256, 512]
+  backbone.p:               {value: 2}
+  backbone.decoder_distance: {value: SinkhornLoss}
+
+  backbone.encoder.type:    {value: Transformer}
+  backbone.encoder.n_heads: {value: 12}
+  backbone.encoder.n_layers: {value: 6}
+  backbone.encoder.d_model: {value: 768}
+  backbone.encoder.key_dim: {value: 512}
+  backbone.encoder.feed_forward_hidden_dim: {value: 512}
+
+  backbone.decoder.type:    {value: Transformer}
+  backbone.decoder.n_heads: {value: 12}
+  backbone.decoder.n_layers: {value: 6}
+  backbone.decoder.d_model: {value: 768}
+  backbone.decoder.key_dim: {value: 512}
+  backbone.decoder.feed_forward_hidden_dim: {value: 512}
+
+  batch_size:
+    values: [12, 18]
+  learning_rate:
+    value: 0.001           # avoid scientific notation just in case
+  n_epochs:
+    value: 2

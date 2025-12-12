@@ -9,11 +9,11 @@ parameters:
       type: 
         values: [WassersteinDistanceTask]
       dataset: 
-        values: [GrowingCircles]
+        values: [ModelNet]
       dataset_config:
         parameters:
-          length: 
-            values: [100]
+          name: 
+            values: ["10"]
   backbone:
     parameters:
       type: 
@@ -29,9 +29,9 @@ parameters:
       encoder: 
         parameters:
           type: 
-            values: [Transformer, Sumformer]
+            values: [Transformer]
           n_heads: 
-            values: [1, 2, 3]
+            values: [1, 2, 3, 4]
           n_layers: 
             values: [1, 2, 3]
           d_model: 
@@ -55,9 +55,9 @@ parameters:
           feed_forward_hidden_dim: 
             values: [256]
   batch_size: 
-    values: [12, 18]
+    values: [64, 128]
   learning_rate: 
     value: 0.001
   n_epochs: 
-    value: 100
+    value: 1000
 
