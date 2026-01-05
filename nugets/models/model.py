@@ -111,7 +111,7 @@ class Model(pl.LightningModule):
     debug_mode: bool # disables a bunch of optimizations
 
     def __init__(self, backbone: BackBone, task: "Task", 
-                 batch_size: int, learning_rate: float, 
+                 batch_size: int, learning_rate: float,
                  debug_mode=False):
         super().__init__()
         self.backbone = backbone
@@ -141,7 +141,7 @@ class Model(pl.LightningModule):
         loss = loss.to(torch.float32)
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx, dataloader_idx):
         """Training step of the model"""
         encoded, encoder_info = self.encoder_decoder.encode(batch)
         backbone_result, reg_loss = self.backbone(encoded, return_reg_loss=True)
@@ -168,7 +168,9 @@ class Model(pl.LightningModule):
 
     def val_dataloader(self):
         """Get the training dataloader"""
-        return self.task.get_dataloader("val", self.batch_size, no_workers=self.debug_mode)
+        in_distribution_dataloader = self.task.get_dataloader("val", self.batch_size, no_workers=self.debug_mode)
+        # ood_distribution_dataloader = self.task.get_dataloader("val", self.batch_size, no_workers=self.debug_mode)
+        return [in_distribution_dataloader]
 
     def test_dataloader(self):
         """Get the training dataloader"""

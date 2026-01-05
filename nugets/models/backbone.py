@@ -73,6 +73,7 @@ class InnerBackbone():
     params: "Namespace|dict[str, Any]"
 
     def load(self):
+        print(self.params)
         if isinstance(self.params, dict):
             return self.t.from_dict(self.params)
         return self.t.from_args(self.params)

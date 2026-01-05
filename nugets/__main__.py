@@ -103,11 +103,13 @@ def run_from_wandb_sweep():
     wandb.init(project=config.wandb_project)
     config_dict = dict(wandb.config)
     n_epochs = config_dict.pop("n_epochs")
+    print("run the config", config_dict)
     model = Model.from_dict(config_dict)
     train_model(model, n_epochs=n_epochs)
 
 def run_wandb_sweep_agent(args):
     config = Config.get()
+    print("Running agent")
     wandb.agent(sweep_id=args.sweep_id, count=args.n_runs, project=config.wandb_project,  function=run_from_wandb_sweep)
 
 def start_wandb_sweep(sweep_config_file: Path):
@@ -115,13 +117,14 @@ def start_wandb_sweep(sweep_config_file: Path):
     with sweep_config_file.open() as f:
         sweep_config = yaml.safe_load(f)
     config = Config.get()
-    sweep_id = wandb.sweep(sweep_config, project=config.wandb_project)
+    sweep_id = wandb.sweep(sweep_config, 
+                           project=config.wandb_project, 
+                           entity='tbrugere-ucsd')
     print(sweep_id)
 
 def main():
     parser: CustomArgumentParser = argument_parser()
     args= parser.parse_args()
-    print("config", args.config)
     Config.load(args.config)
     config = Config.get()
     configure_logging(["nugets"], loglevel=args.loglevel if args.loglevel is not None else config.loglevel, 

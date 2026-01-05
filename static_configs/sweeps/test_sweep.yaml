@@ -1,4 +1,4 @@
-name: test_sweep
+name: test_sweep_2
 metric:
   goal: minimize
   name: mean_error
@@ -13,6 +13,10 @@ parameters:
       dataset_config:
         parameters:
           length: 
+            values: [100]
+          min_points:
+            values: [50]
+          max_points:
             values: [100]
   backbone:
     parameters:
@@ -29,7 +33,7 @@ parameters:
       encoder: 
         parameters:
           type: 
-            values: [Transformer, Sumformer]
+            values: [Transformer]
           n_heads: 
             values: [1, 2, 3]
           n_layers: 

@@ -2,30 +2,26 @@ task:
   type: WassersteinDistanceTask
   dataset: GrowingCircles
   dataset_config:
-    length: 3000
+    length: 100
     min_points: 50
     max_points: 100
 backbone:
   type: CoupledNetwork
-  latent_dimension: 256
-  p: 2
+  latent_dimension: 32
+  p: 1
   reconstruct_input: False
   decoder_distance: SinkhornLoss
+  use_siamese: False
   encoder: 
     type: Transformer
-    n_heads: 2
+    n_heads: 1
     n_layers: 2
-    d_model: 768
+    d_model: 128
     key_dim: 512
-    feed_forward_hidden_dim: 512
+    feed_forward_hidden_dim: 128
   decoder:
-    type: Transformer
-    n_heads: 12
-    n_layers: 6
-    d_model: 768
-    key_dim: 512
-    feed_forward_hidden_dim: 512
-batch_size: 128
-learning_rate: 1.e-3
+    decoder_hidden_dim: 256
+    decoder_n_layers: 2
+batch_size: 12
+learning_rate: 1.e-4
 debug_mode: True
-

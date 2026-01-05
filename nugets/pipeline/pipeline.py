@@ -9,7 +9,6 @@ def train_model(model, *, profile=False, n_epochs: int):
     from lightning.pytorch.callbacks import ModelCheckpoint
 
     model_dir = model.get_dir()
-    print("Model directory", model_dir)
 
     ## cast model parameters to float32 (need this for PyTorch Lightning AMP)
     model = model.to(torch.float32)
@@ -31,9 +30,9 @@ def train_model(model, *, profile=False, n_epochs: int):
         additional_options = dict()
     print(global_config.get_default_root_dir(model))
     dir_cfg = global_config.get_default_root_dir(model)
-    dir_cfg = 'workdir'
+    # dir_cfg = 'workdir'
     checkpoint_callback = ModelCheckpoint(
-            dirpath=dir_cfg, 
+            dirpath=model_dir, 
             # monitor="val/loss", 
             # save_top_k=10,
             save_top_k=-1,
@@ -50,12 +49,12 @@ def train_model(model, *, profile=False, n_epochs: int):
     root_cfg = 'workdir'
     trainer = pl.Trainer(default_root_dir=root_cfg, 
                          logger=wandb_logger, 
-                         gradient_clip_val=0, 
+                         gradient_clip_val=1.0, 
                          max_epochs=n_epochs,
+                         # detect_anomaly = True,
                          precision="16-mixed", 
-                         # detect_anomaly=True, 
                          # profiler="simple", 
-                         callbacks=[checkpoint_callback], 
+                         callbacks=[checkpoint_callback],
                          use_distributed_sampler=False,
                          **additional_options
                          )

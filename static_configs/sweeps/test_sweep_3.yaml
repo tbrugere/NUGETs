@@ -1,4 +1,4 @@
-name: Wasserstein-GrowingCircles-D2-Sumformer
+name: test_sweep_3
 metric:
   goal: minimize
   name: mean_error
@@ -13,6 +13,10 @@ parameters:
       dataset_config:
         parameters:
           length: 
+            values: [100]
+          min_points:
+            values: [50]
+          max_points:
             values: [100]
   backbone:
     parameters:
@@ -31,7 +35,7 @@ parameters:
           type: 
             values: [Sumformer]
           n_heads: 
-            values: [1, 2, 3, 4]
+            values: [1, 2, 3]
           n_layers: 
             values: [1, 2, 3]
           d_model: 
@@ -55,9 +59,9 @@ parameters:
           feed_forward_hidden_dim: 
             values: [256]
   batch_size: 
-    values: [128, 256]
+    values: [12, 18]
   learning_rate: 
-    value: 0.0001
+    value: 0.001
   n_epochs: 
-    value: 1000
+    value: 100
 

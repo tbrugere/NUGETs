@@ -1,4 +1,4 @@
-name: Wasserstein-GrowingCircles-D2-Sumformer
+name: Wasserstein-GrowingCircles-D2-Transformer-MLP
 metric:
   goal: minimize
   name: mean_error
@@ -19,45 +19,39 @@ parameters:
       type: 
         values: [CoupledNetwork]
       latent_dimension: 
-        values: [32, 64, 128, 256]
+        values: [32]
       p: 
-        values: [1, 2]
+        values: [1]
       reconstruct_input:
         values: [False]
       decoder_distance: 
         values: [SinkhornLoss]
+      use_siamese:
+        values: [False]
       encoder: 
-        parameters:
-          type: 
-            values: [Sumformer]
-          n_heads: 
-            values: [1, 2, 3, 4]
-          n_layers: 
-            values: [1, 2, 3]
-          d_model: 
-            values: [128, 256]
-          key_dim: 
-            values: [512]
-          feed_forward_hidden_dim: 
-            values: [128, 256, 512]
-      decoder:
         parameters:
           type: 
             values: [Transformer]
           n_heads: 
-            values: [12]
+            values: [1]
           n_layers: 
-            values: [6]
+            values: [2]
           d_model: 
-            values: [256]
+            values: [128]
           key_dim: 
             values: [512]
           feed_forward_hidden_dim: 
-            values: [256]
+            values: [128]
+      decoder:
+        parameters:
+          decoder_hidden_dim:
+            values: [128, 256, 512]
+          decoder_n_layers:
+            values: [1, 2, 3, 4]
   batch_size: 
-    values: [128, 256]
+    values: [128]
   learning_rate: 
     value: 0.0001
   n_epochs: 
-    value: 1000
+    value: 100
 

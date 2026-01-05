@@ -1,4 +1,4 @@
-name: Wasserstein-GrowingCircles-Transformer
+name: Wasserstein-GrowingCircles-D2-Transformer
 metric:
   goal: minimize
   name: mean_error
@@ -59,9 +59,9 @@ parameters:
           feed_forward_hidden_dim: 
             values: [256]
   batch_size: 
-    values: [64, 128]
+    values: [128, 256]
   learning_rate: 
-    value: 0.001
+    value: 0.0001
   n_epochs: 
     value: 1000
 

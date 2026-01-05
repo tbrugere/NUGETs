@@ -41,6 +41,9 @@ class CoupledNetwork(BackBone):
     latent_dimension: int = int_hyperparameter(description="dimension of the latent space, set it to 0 to disable latent")
     p: int = int_hyperparameter(description="L_p distance function")
 
+    use_siamese: bool = bool_hyperparameter(default=True, description="use Lp distance instead, not a final MLP")
+    distance_mlp: MLP|None = model_attribute() # module if we want the final distance to be computed via MLP
+
     aggregation: str = hyperparameter(default='mean', type=str, description="aggregation function")
 
     decoder_distance: str = hyperparameter(type=str)
@@ -69,6 +72,15 @@ class CoupledNetwork(BackBone):
                                 self.decoder_n_points * self.encoder1.get_input_dim())
         else: self.decoder1 = self.decoder2 = None
 
+        if self.use_siamese:
+            self.distance_mlp=None
+        elif not self.use_siamese and self.reconstruct_input:
+            raise ValueError('use_siamese must be true when reconstructing input')
+        else:
+            self.distance_mlp = MLP(self.latent_dimension, 
+                                    *[self.decoder_hidden_dim]*self.decoder_n_layers, 
+                                    1)
+
         if self.latent_dimension:
             self.encoder_projection_1 = nn.Linear(self.encoder1.get_output_dim(), self.latent_dimension)
             self.encoder_projection_2 = nn.Linear(self.encoder2.get_output_dim(), self.latent_dimension)
@@ -91,11 +103,15 @@ class CoupledNetwork(BackBone):
         v1, _ = self.encoder1(set1) # for now, ignore regularization for encoders/decoders
         v2, _ = self.encoder2(set2)
 
+        # TODO: Fix aggregation so that we can use any aggregation 
         v1 = self.encoder_projection_1(v1.mean())
         v2 = self.encoder_projection_2(v2.mean())
 
-        predicted_distances = torch.linalg.vector_norm(v1 - v2, ord=self.p, dim=-1)
-        #print("got to predicted distances")
+        if self.use_siamese:
+            predicted_distances = torch.linalg.vector_norm(v1 - v2, ord=self.p, dim=-1)
+        else:
+            predicted_distances = self.distance_mlp(v1 + v2)
+            predicted_distances = predicted_distances.squeeze(1)
 
         if self.reconstruct_input and self.training:
             assert self.decoder1 is not None and self.decoder2 is not None

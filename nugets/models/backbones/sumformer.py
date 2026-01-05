@@ -14,7 +14,7 @@ class Sumformer(BackBone):
 
     feed_forward_hidden_dim: int = int_hyperparameter(description="hidden dimension")
 
-    aggregation: str = hyperparameter(type=str, description="sequence aggregation function")
+    aggregation: str = hyperparameter(type=str, description="sequence aggregation function", default='none')
     
     sumformer: Sumformer_nn = model_attribute()
 
