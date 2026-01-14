@@ -53,6 +53,6 @@ class DistanceEncoderDecoder(EncoderDecoder):
         else:
             out_distances = backbone_result
             recon_loss = 0.
-        loss = mse_loss(out_distances, batch.distance) + recon_loss
+        loss = mse_loss(out_distances, batch.distance.float()) + recon_loss
         return loss
 

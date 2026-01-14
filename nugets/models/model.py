@@ -141,7 +141,7 @@ class Model(pl.LightningModule):
         loss = loss.to(torch.float32)
         return loss
 
-    def validation_step(self, batch, batch_idx, dataloader_idx):
+    def validation_step(self, batch, batch_idx, dataloader_idx=0):
         """Training step of the model"""
         encoded, encoder_info = self.encoder_decoder.encode(batch)
         backbone_result, reg_loss = self.backbone(encoded, return_reg_loss=True)

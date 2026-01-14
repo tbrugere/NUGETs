@@ -61,7 +61,7 @@ class MinimumBallTask(Task):
                                  backbone_output_dim = backbone_output_dim,
                                  output_dim = output_dim)
     
-    def get_minimum_enclosing_annulus(self, set):
+    def get_minimum_enclosing_ball(self, set):
         return NotImplementedError
 
 class MinimumCoveringEllipseTask(Task):
