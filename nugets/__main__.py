@@ -93,7 +93,6 @@ def train_from_config(config_file,*, profile=False, n_epochs):
     from nugets.models.model import Model
     import torch
     import torch_scatter
-    #print("\n\nTorch scatter has cuda", torch_scatter.is_compiled_with_cuda(), "\n\n")
     model = Model.from_config_file(config_file)
     train_model(model, profile=profile, n_epochs=n_epochs)
 

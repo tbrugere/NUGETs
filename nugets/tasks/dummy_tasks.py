@@ -13,6 +13,7 @@ from torch_heterogeneous_batching import Batch
 
 from .task import Task
 from .register import register
+from .transforms import SetLabelTransform
 from nugets.models.backbone import BackBone
 from nugets.models.encoder_decoders.identity import SetIdentityEncoderDecoder, SingleLabelSetEncoderDecoder
 from nugets.datasets.datapoint_types import LabeledSetBatch, LabeledSetDatapoint
@@ -52,9 +53,12 @@ class SingleLabel(Transform):
 @register
 class SingleLabelDummyTask(Task):
     def process_dataset(self, dataset):
-        transform = SingleLabel()
+        transform = SetLabelTransform(self.label)
         return transform(dataset)
     
+    def label(self, pointset):
+        return tensor([1.0, 0.0])
+
     def compute_metrics(self, datapoint, results):
         del datapoint, results
         return dict(error=tensor(1.0))
@@ -62,10 +66,9 @@ class SingleLabelDummyTask(Task):
     def datapoint_type(self):
         return LabeledSetDatapoint
     
-    def get_encoder_decoder(self, backbone: BackBone):
+    def get_encoder_decoder(self, backbone: BackBone, loss_function: str ='mse_loss', **kwargs):
 
         input_dim = self.dataset_info()["dim"]
-        print("input dimension", input_dim)
         backbone_input_dim = backbone.get_input_dim()
         backbone_output_dim = backbone.get_output_dim()
         output_dim = 2

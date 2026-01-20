@@ -67,6 +67,7 @@ class EncoderDecoderWithProjection(EncoderDecoder):
 
         - a set of hyperparameters
         - learnable parameters
+    Decoder projects from an input 
 
     """
 
@@ -91,6 +92,30 @@ class EncoderDecoderWithProjection(EncoderDecoder):
         del batch, backbone_result, encoder_info
         raise NotImplementedError
 
+class EncoderDecoderToVector(EncoderDecoder):
+    in_proj: nn.Linear
+    out_proj: nn.Linear
+    aggregation: str = "none" # TODO: Change aggregation
+
+    def __init__(self, input_dim: int, backbone_input_dim: int,
+                 backbone_output_dim: int, output_dim: int|None):
+        super().__init__()
+        if output_dim is None:
+            output_dim = input_dim
+        self.in_proj = nn.Linear(input_dim, backbone_input_dim)
+        self.out_proj = nn.Linear(backbone_output_dim, output_dim)
+    
+    def decode(self, backbone_result: Any) -> Any:
+        result = backbone_result.mean()
+        return self.out_proj(result)
+
+    def compute_loss(self, batch: Datapoint,  
+                     backbone_result: Any, encoder_info: Any) -> torch.Tensor:
+        del batch, backbone_result, encoder_info
+        raise NotImplementedError
+
+
+
 class Model(pl.LightningModule):
     """Base class for all models
 
@@ -109,13 +134,15 @@ class Model(pl.LightningModule):
     batch_size: int
     learning_rate: float
     debug_mode: bool # disables a bunch of optimizations
+    loss_function: str 
 
     def __init__(self, backbone: BackBone, task: "Task", 
                  batch_size: int, learning_rate: float,
-                 debug_mode=False):
+                 debug_mode=False, loss_function='mse_loss'):
         super().__init__()
         self.backbone = backbone
-        self.encoder_decoder = task.get_encoder_decoder(backbone)
+        self.loss_function = loss_function
+        self.encoder_decoder = task.get_encoder_decoder(backbone, self.loss_function)
         self.task = task
         self.batch_size = batch_size
         self.learning_rate = learning_rate
@@ -141,15 +168,21 @@ class Model(pl.LightningModule):
         loss = loss.to(torch.float32)
         return loss
 
-    def validation_step(self, batch, batch_idx, dataloader_idx=0):
+    def validation_step(self, batch, batch_idx, dataloader_idx):
         """Training step of the model"""
         encoded, encoder_info = self.encoder_decoder.encode(batch)
         backbone_result, reg_loss = self.backbone(encoded, return_reg_loss=True)
         results = self.encoder_decoder.decode(backbone_result)
+        
         if reg_loss is not None: 
             self.log('val/reg_loss', reg_loss, batch_size=self.batch_size)
         metrics = self.task.compute_metrics(batch, results)
-        self.log_dict(metrics, batch_size=self.batch_size)
+        if dataloader_idx == 0:
+            val_metrics = {f'val/{key}': value for key, value in metrics.items()}
+            self.log_dict(val_metrics, batch_size=self.batch_size)
+        elif dataloader_idx == 1:
+            ood_metrics = {f'ood/{key}': value for key, value in metrics.items()}
+            self.log_dict(ood_metrics, batch_size=self.batch_size)
 
     def configure_optimizers(self):
         backbone_optim = self.backbone.configure_optimizer()
@@ -169,8 +202,8 @@ class Model(pl.LightningModule):
     def val_dataloader(self):
         """Get the training dataloader"""
         in_distribution_dataloader = self.task.get_dataloader("val", self.batch_size, no_workers=self.debug_mode)
-        # ood_distribution_dataloader = self.task.get_dataloader("val", self.batch_size, no_workers=self.debug_mode)
-        return [in_distribution_dataloader]
+        ood_distribution_dataloader = self.task.get_dataloader("ood", self.batch_size, no_workers=self.debug_mode)
+        return [in_distribution_dataloader, ood_distribution_dataloader]
 
     def test_dataloader(self):
         """Get the training dataloader"""
@@ -224,6 +257,7 @@ class Model(pl.LightningModule):
     @classmethod
     def from_dict(cls, config: dict):
         config_ = ModelConf.model_validate(config)
+        print("validated config", config_)
         return cls.from_config(config_)
 
     @classmethod
@@ -248,7 +282,7 @@ class Model(pl.LightningModule):
     def from_config(cls, config: ModelConf):
         return cls(backbone=config.backbone.load(), task = config.task.load(), 
                  batch_size= config.batch_size, learning_rate= config.learning_rate, 
-                 debug_mode=config.debug_mode)
+                 debug_mode=config.debug_mode, loss_function = config.loss_function)
 
     def get_config(self):
         backbone_conf = self.backbone.get_config()

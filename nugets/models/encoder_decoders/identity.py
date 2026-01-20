@@ -5,7 +5,7 @@ from torch_heterogeneous_batching import Batch
 from torch_heterogeneous_batching.nn.losses import BatchMSELoss
 
 from nugets.datasets.datapoint_types import Set_batch, Point_datapoint, LabeledSetBatch
-from nugets.models.model import EncoderDecoderWithProjection
+from nugets.models.model import EncoderDecoderWithProjection, EncoderDecoderToVector
 
 class PointIdentityEncoderDecoder(EncoderDecoderWithProjection):
     """Identity encoder-decoder"""
@@ -35,11 +35,11 @@ class SetIdentityEncoderDecoder(EncoderDecoderWithProjection):
         loss = self.loss(batch.pointset, decoded)
         return loss
     
-class SingleLabelSetEncoderDecoder(EncoderDecoderWithProjection):
+class SingleLabelSetEncoderDecoder(EncoderDecoderToVector):
     """ Single label prediction encoder-decoder with cross entropy loss """
     def __init__(self, input_dim: int, backbone_input_dim: int, backbone_output_dim: int, output_dim: int):
         super().__init__(input_dim, backbone_input_dim, backbone_output_dim, output_dim)
-        self.loss = CrossEntropyLoss()
+        self.loss = BatchMSELoss()
     
     def encode(self, batch: LabeledSetBatch):
         return self.in_proj(batch.pointset), None
@@ -47,5 +47,5 @@ class SingleLabelSetEncoderDecoder(EncoderDecoderWithProjection):
     def compute_loss(self, batch: LabeledSetBatch, backbone_result: Batch, encoder_info):
         del encoder_info
         decoded = self.decode(backbone_result)
-        loss = self.loss(batch.label, decoded)
+        loss = mse_loss(batch.label, decoded)
         return loss

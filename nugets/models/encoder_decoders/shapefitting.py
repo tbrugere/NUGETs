@@ -5,26 +5,32 @@ from torch_heterogeneous_batching import Batch
 from torch_heterogeneous_batching.nn.losses import BatchMSELoss
 
 from nugets.datasets.datapoint_types import Set_batch
-from nugets.models.model import EncoderDecoderWithProjection
+from nugets.models.model import EncoderDecoderWithProjection, EncoderDecoderToVector
+import nugets.losses.losses as Losses
+from nugets.datasets.datapoint_types import LabeledSetBatch, LabeledSetDatapoint
 
 
 
-class MEBEncoderDecoder(EncoderDecoderWithProjection):
-    """" Minimum Enclosing Ball """"
+class MEBEncoderDecoder(EncoderDecoderToVector):
+
+    def __init__(self, loss_function: str = "radius_error", *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.loss_function = getattr(Losses, loss_function)
+
+    def encode(self, batch: LabeledSetBatch):
+        return self.in_proj(batch.pointset), None
     
-    # output d-dimensional center and a single value for the radius
-    def compute_loss(self, 
-                    batch: LabeledSetBatch, 
-                    backbone_result: Tensor, 
-                    encoder_info):
-        input_dim = batch.n_features()
-
-        predicted_center = backbone_result[:, :input_dim] 
-        predicted_radius = backbone_result[:, input_dim]
+    def compute_loss(self, batch: LabeledSetBatch, backbone_result: Tensor, encoder_info):
+        input_dim = batch.pointset.n_features
+        result = self.decode(backbone_result)
+        predicted_center = result[:, :input_dim] 
+        predicted_radius = result[:, input_dim]
 
         center  = batch.label[:, :input_dim]
         radius = batch.label[:, input_dim]
-        return torch.sum(torch.linalg.norm(predicted_center - centers, axis=1)) + mse_loss(radius, predicted_radius)
+        loss = self.loss_function(c=center, predicted_c=predicted_center, radius=radius, predicted_r=predicted_radius )
+        return loss
+
 
 class MECEncoderDecoder(EncoderDecoderWithProjection):
     """ Minimum Enclosing Cylinder """

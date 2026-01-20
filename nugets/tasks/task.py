@@ -23,10 +23,14 @@ class Task():
 
     dataset_name: str
     dataset_parameters: dict
+    ood_dataset_name: str 
+    ood_dataset_parameters: dict
 
-    def __init__(self, dataset, dataset_parameters):
+    def __init__(self, dataset, dataset_parameters, ood_dataset_name, ood_dataset_parameters):
         self.dataset_name = dataset
         self.dataset_parameters = dataset_parameters
+        self.ood_dataset_name = ood_dataset_name
+        self.ood_dataset_parameters = ood_dataset_parameters
 
     def consistent_hash(self) -> bytes:
         """Hash the task"""
@@ -35,12 +39,22 @@ class Task():
         b.write(bytes(1))
         b.write(dict_to_bytes(self.dataset_parameters))
         return hashlib.sha256(b.getvalue()).digest()
+    
+    def consistent_ood_hash(self) -> bytes:
+        """Hash OOD dataset"""
+        b = BytesIO()
+        b.write(self.ood_dataset_name.encode())
+        b.write(bytes(1))
+        b.write(dict_to_bytes(self.ood_dataset_parameters))
+        return hashlib.sha256(b.getvalue()).digest()
 
     def get_config(self) -> TaskConf:
         return TaskConf(
             type=self.__class__.__name__,
             dataset=self.dataset_name, 
             dataset_config=self.dataset_parameters, 
+            ood_dataset=self.ood_dataset_name,
+            ood_config = self.ood_dataset_parameters
         )
 
     """
@@ -51,13 +65,15 @@ class Task():
     _inner_datasets = {}
     _processed_datasets = {}
         
-    def get_inner_dataset(self, which: Literal["train", "val", "test"]) -> Dataset:
+    def get_inner_dataset(self, which: Literal["train", "val", "test", "ood"]) -> Dataset:
         """Get the inner dataset"""
         if which in self._inner_datasets:
             return self._inner_datasets[which]
         dataset_register = get_dataset_register()
-        dataset_type = dataset_register[self.dataset_name]
-        dataset = dataset_type(**self.dataset_parameters, which=which)
+        dataset_name = self.ood_dataset_name if which == "ood" else self.dataset_name
+        dataset_parameters = self.ood_dataset_parameters if which == "ood" else self.dataset_parameters
+        dataset_type = dataset_register[dataset_name]
+        dataset = dataset_type(**dataset_parameters, which=which)
         self._inner_datasets[which] = dataset
         return dataset
 
@@ -65,18 +81,18 @@ class Task():
         """Any preprocessing of the dataset that can be cached should be applied here"""
         return dataset
 
-    def get_cached_processed_dataset_filename(self, which: Literal["train", "val", "test"]) -> str:
+    def get_cached_processed_dataset_filename(self, which: Literal["train", "val", "test", "ood"]) -> str:
         """Get the path to the cached processed dataset"""
         task_name = self.__class__.__name__
-        task_hash: bytes = self.consistent_hash()
+        task_hash: bytes = self.consistent_ood_hash() if which == 'ood' else self.consistent_hash()
         task_hash_b64: str = b64encode(task_hash, altchars=b':-').decode()
         return f"{task_name}_{task_hash_b64}_{which}.tar"
 
-    def get_cached_processed_dataset_path(self, which: Literal["train", "val", "test"]) -> Path:
+    def get_cached_processed_dataset_path(self, which: Literal["train", "val", "test", "ood"]) -> Path:
         """Get the path to the cached processed dataset"""
         return Path("workdir/datasets/processed") / self.get_cached_processed_dataset_filename(which)
 
-    def cache_processed_dataset(self, which: Literal["train", "val", "test"], 
+    def cache_processed_dataset(self, which: Literal["train", "val", "test", "ood"], 
                                 skip_if_exists=False, 
                                 try_getting_from_cloud=False, 
                                 upload_to_cloud=False):
@@ -103,7 +119,7 @@ class Task():
         dataset_type = dataset_register[self.dataset_name]
         return dataset_type.datatype
 
-    def get_cached_processed_dataset(self, which: Literal["train", "val", "test"]) -> Dataset|None:
+    def get_cached_processed_dataset(self, which: Literal["train", "val", "test", "ood"]) -> Dataset|None:
         """Return the cached processed dataset"""
         from ml_lib.datasets.datasets.tar_dataset import AutoTarDataset
         path = self.get_cached_processed_dataset_path(which)
@@ -111,12 +127,12 @@ class Task():
         return AutoTarDataset(self.datapoint_type(), path)
 
     def get_any_cached_processed_dataset(self):
-        for which in ("train", "val", "test"):
+        for which in ("train", "val", "test", "ood"):
             ds = self.get_cached_processed_dataset(which)
             if ds is not None: return ds
         return None
 
-    def get_dataset(self, which: Literal["train", "val", "test"]) -> Dataset:
+    def get_dataset(self, which: Literal["train", "val", "test", "ood"]) -> Dataset:
         """Get the dataset"""
         if which in self._processed_datasets:
             return self._processed_datasets[which]
@@ -142,7 +158,7 @@ class Task():
         return ds.dataset_parameters()
 
     def prepare_data(self):
-        for which in "train", "val", "test":
+        for which in "train", "val", "test", "ood":
             self.cache_processed_dataset(which, skip_if_exists=True, 
                                          try_getting_from_cloud=False, 
                                          upload_to_cloud = False)
@@ -170,13 +186,13 @@ class Task():
         blob.upload_from_filename(str(file))
 
     def get_datasets_from_cloud(self, unavailable_ok=True, skip_if_exists=True):
-        for which in "train", "val", "test":
+        for which in "train", "val", "test", "ood":
             if self.get_cached_processed_dataset_path(which).exists() and skip_if_exists:
                 continue
             self.get_dataset_from_cloud(which, unavailable_ok=unavailable_ok)
 
     def upload_datasets_to_cloud(self, overwrite=False):
-        for which in "train", "val", "test":
+        for which in "train", "val", "test", "ood":
             self.upload_dataset_to_cloud(which, overwrite=overwrite)
 
 
@@ -186,7 +202,7 @@ class Task():
     ------------
     """
 
-    def get_dataloader(self, which: Literal["train", "val", "test"], batch_size: int, 
+    def get_dataloader(self, which: Literal["train", "val", "test", "ood"], batch_size: int, 
                        no_workers=False):
         """Get the dataloader"""
         from torch.utils.data import DataLoader

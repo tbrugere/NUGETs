@@ -1,23 +1,28 @@
 from typing import TypeAlias
 from torch import Tensor
 from torch.nn import Linear
-from torch.nn.functional import mse_loss
+from torch.nn.functional import mse_loss, l1_loss
 from torch_heterogeneous_batching import Batch
 from torch_heterogeneous_batching.nn.losses import BatchMSELoss
 
 from nugets.datasets.datapoint_types import DistanceBatch
 from nugets.models.model import EncoderDecoder
 from nugets.losses.losses import SinkhornLoss
+import nugets.losses.losses as Losses
+
+import sys
 
 DistanceBackboneResult: TypeAlias = Tensor|tuple[Tensor, Batch|None, Batch|None]
 
 class DistanceEncoderDecoder(EncoderDecoder):
     """Identity encoder-decoder"""
 
-    def __init__(self, input_dim: tuple[int, int], backbone_input_dim: tuple[int, int],
+    def __init__(self, input_dim: tuple[int, int], 
+                 backbone_input_dim: tuple[int, int],
                  backbone_output_dim: int, 
                  same_input_proj=True, 
-                 backbone_reconstructs=False):
+                 backbone_reconstructs=False, 
+                 loss_function='mse_loss'):
         super().__init__()
         in1, in2 = input_dim
         back_in1, back_in2 = backbone_input_dim
@@ -32,7 +37,7 @@ class DistanceEncoderDecoder(EncoderDecoder):
             self.decode_proj2 = Linear(back_in2, in2) if not same_input_proj else self.decode_proj1
         else:
             self.sinkhorn_loss = self.decode_proj1 = self.decode_proj2 = None
-
+        self.loss_function = getattr(Losses, loss_function)
 
     def encode(self, batch: DistanceBatch):
         return (self.in_proj1(batch.set1), self.in_proj2(batch.set2)), None
@@ -53,6 +58,6 @@ class DistanceEncoderDecoder(EncoderDecoder):
         else:
             out_distances = backbone_result
             recon_loss = 0.
-        loss = mse_loss(out_distances, batch.distance.float()) + recon_loss
+        loss = self.loss_function(out_distances, batch.distance.float()) + recon_loss
         return loss
 

@@ -69,7 +69,7 @@ class DistanceTask(Task):
         """Compute the distance between two sets"""
         raise NotImplementedError
 
-    def get_encoder_decoder(self, backbone):
+    def get_encoder_decoder(self, backbone, loss_function='mse_loss'):
         """Get the encoder-decoder"""
         from nugets.models.encoder_decoders.distances import DistanceEncoderDecoder
         dataset_info = self.dataset_info()
@@ -81,13 +81,15 @@ class DistanceTask(Task):
         else: 
             input_dim1 = input_dim2 = dataset_info["dim"]
         same_input_proj = getattr(backbone, 
-                                  "same_input_proj", input_dim1 == input_dim2)
+                                  "same_input_proj", 
+                                  input_dim1 == input_dim2)
         backbone_reconstructs = getattr(backbone, "reconstruct_input", False)
         return DistanceEncoderDecoder(input_dim = (input_dim1, input_dim2), 
                                       backbone_input_dim=backbone_input_dims, 
                                       backbone_output_dim=backbone_output_dim, 
                                       same_input_proj=same_input_proj, 
-                                      backbone_reconstructs=backbone_reconstructs
+                                      backbone_reconstructs=backbone_reconstructs,
+                                      loss_function=loss_function
                                       )
 
     def datapoint_type(self):
@@ -96,10 +98,8 @@ class DistanceTask(Task):
     def compute_metrics(self, datapoint: DistanceDatapoint, results: Tensor):
         gt = datapoint.distance  
         batch_error = torch.abs(results - gt)
-        relative_error = torch.clip(batch_error / gt, 1e3)
         re = batch_error/(gt + 1e-3)
         mean_error = batch_error.mean()
-        mean_relative_error = relative_error.mean()
         mean_relative_error = re.mean()
         return dict(
             mean_error=mean_error, 

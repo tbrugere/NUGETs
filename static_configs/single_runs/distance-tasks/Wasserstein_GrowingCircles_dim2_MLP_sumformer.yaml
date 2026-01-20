@@ -2,9 +2,14 @@ task:
   type: WassersteinDistanceTask
   dataset: GrowingCircles
   dataset_config:
-    length: 3000
+    length: 100
     min_points: 50
     max_points: 100
+  ood_dataset: GrowingCircles
+  ood_config:
+    length: 10
+    min_points: 150
+    max_points: 200
 backbone:
   type: CoupledNetwork
   latent_dimension: 32
@@ -15,7 +20,7 @@ backbone:
   encoder: 
     type: Sumformer
     n_heads: 1
-    n_layers: 2
+    n_layers: 1
     d_model: 128
     key_dim: 512
     feed_forward_hidden_dim: 128

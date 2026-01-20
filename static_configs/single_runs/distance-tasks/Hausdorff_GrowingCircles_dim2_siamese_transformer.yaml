@@ -1,10 +1,15 @@
 task:
-  type: HausdorffDistanceTask
+  type: WassersteinDistanceTask
   dataset: GrowingCircles
   dataset_config:
     length: 100
     min_points: 50
     max_points: 100
+  ood_dataset: GrowingCircles
+  ood_config:
+    length: 10
+    min_points: 150
+    max_points: 200
 backbone:
   type: CoupledNetwork
   latent_dimension: 128
