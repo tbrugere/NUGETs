@@ -95,7 +95,7 @@ class EncoderDecoderWithProjection(EncoderDecoder):
 class EncoderDecoderToVector(EncoderDecoder):
     in_proj: nn.Linear
     out_proj: nn.Linear
-    aggregation: str = "none" # TODO: Change aggregation
+    aggregation: str = "none" # TODO: Enable changes in aggregation
 
     def __init__(self, input_dim: int, backbone_input_dim: int,
                  backbone_output_dim: int, output_dim: int|None):

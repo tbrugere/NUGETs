@@ -1,5 +1,5 @@
 task:
-  type: WassersteinDistanceTask
+  type: HausdorffDistanceTask
   dataset: GrowingCircles
   dataset_config:
     length: 100

@@ -13,7 +13,7 @@ from nugets.datasets.datapoint_types import LabeledSetBatch, LabeledSetDatapoint
 
 class MEBEncoderDecoder(EncoderDecoderToVector):
 
-    def __init__(self, loss_function: str = "radius_error", *args, **kwargs):
+    def __init__(self, loss_function: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.loss_function = getattr(Losses, loss_function)
 
@@ -28,33 +28,48 @@ class MEBEncoderDecoder(EncoderDecoderToVector):
 
         center  = batch.label[:, :input_dim]
         radius = batch.label[:, input_dim]
-        loss = self.loss_function(c=center, predicted_c=predicted_center, radius=radius, predicted_r=predicted_radius )
+        loss = self.loss_function(c=center, predicted_c=predicted_center, r=radius, predicted_r=predicted_radius )
         return loss
 
-
-class MECEncoderDecoder(EncoderDecoderWithProjection):
-    """ Minimum Enclosing Cylinder """
-
-    def compute_loss(self, 
-                    batch: LabeledSetBatch,
-                    backbone_result: Tensor,
-                    encoder_info):
-        return 0
-
-class MEAEncoderDecoder(EncoderDecoderWithProjection):
+class MEAEncoderDecoder(EncoderDecoderToVector):
     """ Minimum Enclosing Annulus """
+
+    def __init__(self, loss_function: str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.loss_function = getattr(Losses, loss_function)
+    
+    def encode(self, batch: LabeledSetBatch):
+        return self.in_proj(batch.pointset), None
 
     # output d-dimensional center and two radii
     def compute_loss(self, 
                     batch: LabeledSetBatch,
                     backbone_result: Tensor,
                     encoder_info):
-        input_dim = batch.n_features()
-        predicted_centers = backbone_result[:, :input_dim]
-        predicted_inner_radius = backbone_result[:, input_dim]
-        predicted_outer_radius = backbone_result[:, input_dim + 1]
+        input_dim = batch.pointset.n_features
+        result = self.decode(backbone_result)
+        predicted_centers = result[:, :input_dim]
+        predicted_inner_radius = result[:, input_dim]
+        predicted_outer_radius = result[:, input_dim + 1]
 
         centers = batch.label[:, :input_dim]
         inner_radius = batch.label[:, input_dim]
         outer_radius = batch.label[:, input_dim + 1]
-        return torch.sum(torch.linalg.norm(predicted_centers - centers, axis=1)) + mse_loss(inner_radius, predicted_inner_radius) + mse_loss(outer_radius, predicted_outer_radius)
+        loss = self.loss_function(c=centers, predicted_c=predicted_centers, 
+                                  inner_r=inner_radius, predicted_inner_r=predicted_inner_radius,
+                                  outer_r=outer_radius, predicted_outer_r=predicted_outer_radius)
+        return loss
+
+class MEEEncoderDecoder(EncoderDecoderToVector):
+    """ Minimum Enclosing Cylinder """
+    def __init__(self, loss_function: str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.loss_function = getattr(Losses, loss_function)
+    
+    def encode(self, batch: LabeledSetBatch):
+        return self.in_proj(batch.pointset), None
+    def compute_loss(self, 
+                    batch: LabeledSetBatch,
+                    backbone_result: Tensor,
+                    encoder_info):
+        return 0

@@ -26,6 +26,16 @@ It will automatically create a virtual environment in ``.venv``, which you can t
 
    $ source .venv/bin/activate
 
+You may need the Computational Geometry Algorithms Library (CGAL) in order to use this benchmark fully. Follow the installation directions on their documentation. You may need the following additional step (I did): 
+
+   1. When following the CGAL installation build, modify the configuration to `cmake .. -DCMAKE=<CGAL-location>`. For me, it was `/home/CGAL-6.0`. 
+
+   2. There may also be an error thrown about MPFR when attempting compile some of the CGAL examples. Be sure to point `CMAKE_PREFIX_PATH` to `$CONDA-PREFIX` if you are using that. 
+
+   3. When compiling the swig bindings, you must compile it against the SAME version of python that you are running the library in. 
+
+   With these two steps, I was able to install and use CGAL with C++17 on a linux-aarch64 machines. Eventually, I would like to move away from using these swig bindings. 
+
 Docker image for TACC
 ~~~~~~~~~~~~~~~~~~~~~
 

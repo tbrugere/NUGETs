@@ -62,6 +62,32 @@ class Torus4D(GeneratedDataset[Point_datapoint]):
 
 
 ################################## set-level datasets
+@dataset_register 
+class GaussianBlob(GeneratedDataset[Set_datapoint]):
+    datatype = Set_datapoint
+    dim: int
+    min_points: int
+    max_points: int
+
+    def __init__(self, dim: int=2, min_points=8, max_points=32, **kwargs):
+        super().__init__(**kwargs)
+        self.dim=dim 
+        self.min_points = min_points
+        self.max_points = max_points
+        self.mean = np.ones(dim)
+        self.covariance = np.identity(dim)
+    
+    def prepare(self):
+        pass
+    
+    def generate_item(self, rng):
+        n_points = rng.integers(self.min_points, self.max_points)
+        points = rng.multivariate_normal(mean=self.mean, cov=self.covariance, size=n_points)
+        return Set_datapoint(pointset=torch.as_tensor(points, dtype=torch.float32))
+    
+    def dataset_parameters(self):
+        return {'dim': self.dim, 'min_points': self.min_points, 'max_points': self.max_points}
+
 @dataset_register
 class GrowingCircles(GeneratedDataset[Set_datapoint]):
     """Circles whose radius grow with the number of points

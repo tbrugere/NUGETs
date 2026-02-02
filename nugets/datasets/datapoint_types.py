@@ -86,3 +86,18 @@ class LabeledSetDatapoint(Datapoint):
         label = torch.stack([p.label for p in batch])
         return LabeledSetBatch(pointset=pointset, label=label)
 
+@dataclass
+class SetToLabelSetBatch(Datapoint):
+    pointset: Batch
+    labelset: Batch
+
+@dataclass
+class SetToLabelSetDatapoint(Datapoint):
+    pointset: Tensor
+    labelset: Tensor
+
+    @staticmethod
+    def collate(batch):
+        pointset = Batch.from_list([x.pointset for x in batch], order=1)
+        labelset = Batch.from_list([x.labelset for x in batch], order=1)
+        return SetToLabelSetBatch(pointset=pointset, labelset=labelset)

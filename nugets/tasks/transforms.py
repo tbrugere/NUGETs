@@ -11,9 +11,7 @@ from ml_lib.datasets import Transform
 from torch import Tensor, tensor
 from torch_heterogeneous_batching import Batch
 
-from .task import Task
-from .register import register
-from nugets.datasets.datapoint_types import LabeledSetBatch, LabeledSetDatapoint
+from nugets.datasets.datapoint_types import LabeledSetBatch, LabeledSetDatapoint, SetToLabelSetBatch, SetToLabelSetDatapoint
 
 class SetLabelTransform(Transform):
     label: Callable[Tensor, Tensor]
@@ -24,6 +22,19 @@ class SetLabelTransform(Transform):
         return len(self.inner)
     
     def __getitem__(self, idx):
-        pointset = self.inner[idx].pointset
-        label = self.label(pointset)
+        pointset=self.inner[idx].pointset
+        label=self.label(pointset)
         return LabeledSetDatapoint(pointset=pointset, label=label)
+
+class SetToLabelSetTransform(Transform):
+    label: Callable[Tensor, Tensor]
+    def __init__(self, label):
+        self.label=label
+
+    def __len__(self):
+        return len(self.inner)
+
+    def __getitem__(self, idx):
+        pointset=self.inner[idx].pointset
+        label=self.label(pointset)
+        return SetToLabelSetDatapoint(pointset=pointset, labelset=label)

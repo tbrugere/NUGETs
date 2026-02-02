@@ -8,6 +8,7 @@ workdir
 __pycache__/
 *.py[cod]
 *$py.class
+CGAL/
 
 # C extensions
 *.so
