@@ -1,15 +1,11 @@
 task:
   type: ConvexHullMembershipTask
-  dataset: GaussianBlob
+  dataset: SQUIDBoundaries
   dataset_config:
-    length: 10
-    min_points: 8
-    max_points: 32
-  ood_dataset: GaussianBlob
+    normalization: True
+  ood_dataset: SQUIDBoundaries
   ood_config:
-    length: 10
-    min_points: 100
-    max_points: 200
+    normalization: True
 backbone:
   type: Sumformer
   n_heads: 2
