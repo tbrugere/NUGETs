@@ -26,7 +26,8 @@ class SQUIDBoundaries(Dataset[Set_datapoint]):
         # Retrieve from data folder
         inner = np.load('nugets/datasets/data/squid-data.npy')
         # TODO: Normalize incoming raw data
-        if which == "ood":
+        # If this dataset is requested as part of an OOD dataset, return its validation set
+        if which == "ood": 
             which = "val"
         is_train_or_val = which in ("train", "val") 
         if is_train_or_val:

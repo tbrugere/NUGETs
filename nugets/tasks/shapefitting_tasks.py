@@ -19,8 +19,6 @@ from .transforms import SetLabelTransform
 import miniball
 import numpy as np
 
-# Custom SWIG bindings for CGAL to work 
-
 
 class ShapefittingTask(Task):
     """Task for fitting a shape to a set"""
