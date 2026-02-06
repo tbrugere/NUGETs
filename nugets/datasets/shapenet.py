@@ -6,10 +6,10 @@ from ml_lib.datasets import Dataset
 from ml_lib.datasets.splitting import SplitTransform
 
 from nugets.datasets.datapoint_types import Set_datapoint
-from nugets.datasets.register import register
+from nugets.datasets.register import register as dataset_register
 
 
-@register
+@dataset_register
 class ShapeNet(Dataset[Set_datapoint]):
 
     datatype = Set_datapoint
@@ -41,6 +41,3 @@ class ShapeNet(Dataset[Set_datapoint]):
         return Set_datapoint(dp.x)
 
         
-
-
-
