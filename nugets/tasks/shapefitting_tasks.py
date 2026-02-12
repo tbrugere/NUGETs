@@ -34,12 +34,16 @@ class ShapefittingTask(Task):
 
 @register
 class MinimumEnclosingBallTask(ShapefittingTask):
+    """
+    Task for fitting a ball to a point cloud 
+    This works for any dimension input point cloud. 
+    """
     def label(self, pointset):
         raw_pointcloud = pointset.numpy()
         C, r = miniball.get_bounding_ball(raw_pointcloud, epsilon=1e-6)
         return torch.tensor(np.append(C, r)).float()
     
-    # TODO: Add more metrics here
+    # TODO: Add more metrics for minimum enclosing ball 
     def compute_metrics(self, datapoint: LabeledSetDatapoint, results: Tensor):
         gt = datapoint.label
         gt_r = datapoint.label[:, -1]

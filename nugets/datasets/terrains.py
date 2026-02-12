@@ -13,7 +13,7 @@ from nugets.datasets.register import register as dataset_register
 class NZDEM(Dataset[Set_datapoint]):
     """
 
-    3D point clouds representing terrain surfaces
+    3D point clouds representing terrain surfaces of New Zealand
     From OpenTopoData: https://www.opentopodata.org/
 
     """
@@ -24,6 +24,7 @@ class NZDEM(Dataset[Set_datapoint]):
 
     seed: int = 42  # random seed set for sampling from point cloud
     point_clouds_per_terrain: int = 100
+    sampling: str = "random" # This is an additional parameter that can change
 
     def __init__(self, n_points: int = 100, which="train", **kwargs):
         super().__init__(**kwargs)

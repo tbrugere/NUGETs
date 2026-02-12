@@ -13,11 +13,10 @@ import nugets.losses.losses as Losses
 
 from torch_geometric.nn.resolver import aggregation_resolver
 
-
 @register
 class CoupledNetwork(BackBone):
     """
-    Siamese network backbone
+    Siamese network backbone for point clouds
 
     Note that this network should take other backbone models as an argument
 

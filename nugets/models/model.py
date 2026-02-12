@@ -149,6 +149,8 @@ class Model(pl.LightningModule):
         self.debug_mode = debug_mode
         self.save_hyperparameters(self.get_config().model_dump())
         # print(self.hparams)
+        self.positional_encoding = False # TODO: change this
+
 
     def forward(self, batch: Datapoint) -> Any:
         """Forward pass of the model"""
@@ -194,6 +196,8 @@ class Model(pl.LightningModule):
     def prepare_data(self):
         """Prepare the data"""
         self.task.prepare_data()
+        # TODO: Add positional encoding preparation here
+        
 
     def train_dataloader(self):
         """Get the training dataloader"""
