@@ -2,7 +2,7 @@ task:
   type: WassersteinDistanceTask
   dataset: GrowingCircles
   dataset_config:
-    length: 100
+    length: 10
     min_points: 50
     max_points: 100
   ood_dataset: GrowingCircles

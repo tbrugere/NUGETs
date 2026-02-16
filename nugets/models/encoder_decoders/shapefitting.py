@@ -26,7 +26,7 @@ class MEBEncoderDecoder(EncoderDecoderToVector):
         predicted_center = result[:, :input_dim] 
         predicted_radius = result[:, input_dim]
 
-        center  = batch.label[:, :input_dim]
+        center = batch.label[:, :input_dim]
         radius = batch.label[:, input_dim]
         loss = self.loss_function(c=center, predicted_c=predicted_center, r=radius, predicted_r=predicted_radius )
         return loss

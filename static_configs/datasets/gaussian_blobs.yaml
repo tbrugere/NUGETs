@@ -1,0 +1,4 @@
+type: GaussianBlob
+dim: 2
+min_points: 10
+max_points: 20

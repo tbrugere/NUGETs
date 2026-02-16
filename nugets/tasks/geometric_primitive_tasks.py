@@ -30,8 +30,8 @@ class ExtremalPointTask(Task):
 
     """
     seed: int = 42 # Seed for randomly generated directions
-    mean = np.ones(dim)
-    covariance = np.identity(dim)
+    # mean = np.ones(dim)
+    # covariance = np.identity(dim)
 
     def process_dataset(self, dataset):
         transform = SetToLabelSetTransform(self.label)

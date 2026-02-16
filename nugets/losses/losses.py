@@ -4,6 +4,8 @@ import torch
 from torch.nn.functional import mse_loss, l1_loss, binary_cross_entropy_with_logits
 from torch_scatter import scatter
 
+import sys
+
 class SinkhornLoss:
     """ Sinkhorn Loss function to use with point clouds """
     
@@ -12,18 +14,6 @@ class SinkhornLoss:
     
     def __call__(self, set1, set2):
         return self.loss(set1.data.to(torch.float32), set2.data.to(torch.float32), ptr_x=set1.ptr, ptr_y=set2.ptr).mean()
-
-class SetMembershipCrossEntropyLoss:
-    """ CrossEntropyLoss function to use with set membership queries """
-    
-    def __init__(self, **kwargs):
-        self.loss=BCELoss()
-    
-    def __call__(self, predicted, target):
-        membership_encoding = target.labelset.data
-        batch_index = target.labelset.batch
-        
-        return self.loss(predicted, target)
 
 def minimum_ball_error(c, predicted_c, r, predicted_r, p=2, **kwargs):
     """

@@ -1,15 +1,15 @@
 task:
   type: MinimumEnclosingBallTask
-  dataset: GrowingCircles
+  dataset: GaussianBlob
   dataset_config:
-    length: 3000
+    length: 10
+    min_points: 20
+    max_points: 30
+  ood_dataset: GaussianBlob
+  ood_config:
+    length: 10
     min_points: 50
     max_points: 100
-  ood_dataset: GrowingCircles
-  ood_config:
-    length: 300
-    min_points: 100
-    max_points: 200
 backbone:
   type: Sumformer
   n_heads: 2
@@ -17,6 +17,7 @@ backbone:
   d_model: 128
   key_dim: 512
   feed_forward_hidden_dim: 128
+  positional_encoding: SinusoidalAbsolutePositionalEncoding
 batch_size: 128
 learning_rate: 1.e-4
 loss_function: minimum_ball_radius_error

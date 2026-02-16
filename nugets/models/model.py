@@ -138,7 +138,8 @@ class Model(pl.LightningModule):
 
     def __init__(self, backbone: BackBone, task: "Task", 
                  batch_size: int, learning_rate: float,
-                 debug_mode=False, loss_function='mse_loss'):
+                 debug_mode=False, loss_function='mse_loss', 
+                 positional_encoding=False):
         super().__init__()
         self.backbone = backbone
         self.loss_function = loss_function
@@ -149,23 +150,34 @@ class Model(pl.LightningModule):
         self.debug_mode = debug_mode
         self.save_hyperparameters(self.get_config().model_dump())
         # print(self.hparams)
-        self.positional_encoding = False # TODO: change this
-
+        if positional_encoding: 
+            from nugets.models.transforms import get_transform_register
+            transform_register = get_transform_register()
+            # get dataset dimension? 
+            print(self.task.dataset_info())
+            input_dim = self.task.dataset_info()['dim']
+            positional_encoding = transform_register[positional_encoding](d_model=input_dim)
+        self.positional_encoding = positional_encoding
+        print("positional encoding:", self.positional_encoding)
 
     def forward(self, batch: Datapoint) -> Any:
         """Forward pass of the model"""
+        if self.positional_encoding:
+            x = self.positional_encoding(batch)
         encoded, _ = self.encoder_decoder.encode(batch)
         backbone_result, _ = self.backbone(encoded)
         return self.encoder_decoder.decode(backbone_result)
 
     def training_step(self, batch, batch_idx):
         """Training step of the model"""
+        if self.positional_encoding:
+            x = self.positional_encoding(batch)
         encoded, encoder_info = self.encoder_decoder.encode(batch)
         backbone_result, reg_loss = self.backbone(encoded, return_reg_loss=True)
         loss = self.encoder_decoder.compute_loss(batch, backbone_result, encoder_info)
-        self.log('train_loss', loss)
+        self.log('train_loss', loss, sync_dist=True)
         if reg_loss is not None: 
-            self.log('train_reg_loss', reg_loss)
+            self.log('train_reg_loss', reg_loss, sync_dist=True)
             loss = loss + reg_loss
         loss = loss.to(torch.float32)
         return loss
@@ -196,8 +208,8 @@ class Model(pl.LightningModule):
     def prepare_data(self):
         """Prepare the data"""
         self.task.prepare_data()
-        # TODO: Add positional encoding preparation here
-        
+        # TODO: this part may need to be modified in the event of 
+        # expensive positional encodings
 
     def train_dataloader(self):
         """Get the training dataloader"""
@@ -284,9 +296,14 @@ class Model(pl.LightningModule):
 
     @classmethod
     def from_config(cls, config: ModelConf):
+        if hasattr(config.backbone, "positional_encoding"):
+            encoding = config.backbone.positional_encoding
+        else:
+            encoding = hasattr(config.backbone, "positional_encoding")
         return cls(backbone=config.backbone.load(), task = config.task.load(), 
                  batch_size= config.batch_size, learning_rate= config.learning_rate, 
-                 debug_mode=config.debug_mode, loss_function = config.loss_function)
+                 debug_mode=config.debug_mode, loss_function = config.loss_function, 
+                 positional_encoding=encoding)
 
     def get_config(self):
         backbone_conf = self.backbone.get_config()
@@ -294,7 +311,8 @@ class Model(pl.LightningModule):
         return ModelConf(
             backbone=backbone_conf, 
             task=task_conf, 
-            batch_size = self.batch_size, learning_rate = self.learning_rate, 
+            batch_size = self.batch_size, 
+            learning_rate = self.learning_rate, 
             debug_mode = self.debug_mode
         )
 
