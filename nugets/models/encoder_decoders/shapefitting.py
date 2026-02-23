@@ -10,15 +10,26 @@ import nugets.losses.losses as Losses
 from nugets.datasets.datapoint_types import LabeledSetBatch, LabeledSetDatapoint
 
 
-
-class MEBEncoderDecoder(EncoderDecoderToVector):
-
-    def __init__(self, loss_function: str, *args, **kwargs):
+class ShapefittingEncoder(EncoderDecoderToVector):
+    def __init__(self, loss_function: str, absolute_positional_encoding: str | None = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.loss_function = getattr(Losses, loss_function)
-
+        if absolute_positional_encoding:
+            from nugets.models.transforms import get_transform_register
+            transform_register = get_transform_register()
+            dim = self.input_dim
+            absolute_positional_encoding = transform_register[absolute_positional_encoding](d_model=dim)
+        self.absolute_positional_encoding = absolute_positional_encoding
+    
     def encode(self, batch: LabeledSetBatch):
+        if self.absolute_positional_encoding: 
+            batch.pointset.data = self.absolute_positional_encoding(batch.pointset)
         return self.in_proj(batch.pointset), None
+
+class MEBEncoderDecoder(ShapefittingEncoder):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
     
     def compute_loss(self, batch: LabeledSetBatch, backbone_result: Tensor, encoder_info):
         input_dim = batch.pointset.n_features
@@ -31,15 +42,12 @@ class MEBEncoderDecoder(EncoderDecoderToVector):
         loss = self.loss_function(c=center, predicted_c=predicted_center, r=radius, predicted_r=predicted_radius )
         return loss
 
-class MEAEncoderDecoder(EncoderDecoderToVector):
+class MEAEncoderDecoder(ShapefittingEncoder):
     """ Minimum Enclosing Annulus """
 
     def __init__(self, loss_function: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.loss_function = getattr(Losses, loss_function)
-    
-    def encode(self, batch: LabeledSetBatch):
-        return self.in_proj(batch.pointset), None
 
     # output d-dimensional center and two radii
     def compute_loss(self, 

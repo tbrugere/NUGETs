@@ -9,6 +9,11 @@ from .dataset_utils import download_from_url, extract_data_from_zip, extract_nes
 from nugets.datasets.datapoint_types import Set_datapoint
 from nugets.datasets.register import register as dataset_register
 
+# TODO: Dataset download slow right now on the server: we should make the construction
+#       faster. I am not sure if this is due to the rasterio file opening that happens?
+
+# TODO: Point sampler class must be implemented here.
+
 @dataset_register 
 class NZDEM(Dataset[Set_datapoint]):
     """

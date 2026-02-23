@@ -83,7 +83,10 @@ class EncoderDecoderWithProjection(EncoderDecoder):
         self.in_proj = nn.Linear(input_dim, backbone_input_dim)
         self.out_proj = nn.Linear(backbone_output_dim, output_dim)
 
-
+        self.input_dim = input_dim 
+        self.output_dim = output_dim 
+        self.backbone_input_dim = backbone_input_dim
+        self.backbone_output_dim = backbone_output_dim 
     def decode(self, backbone_result: Any) -> Any:
         return self.out_proj(backbone_result)
 
@@ -104,6 +107,11 @@ class EncoderDecoderToVector(EncoderDecoder):
             output_dim = input_dim
         self.in_proj = nn.Linear(input_dim, backbone_input_dim)
         self.out_proj = nn.Linear(backbone_output_dim, output_dim)
+
+        self.input_dim = input_dim 
+        self.output_dim = output_dim 
+        self.backbone_input_dim = backbone_input_dim
+        self.backbone_output_dim = backbone_output_dim 
     
     def decode(self, backbone_result: Any) -> Any:
         result = backbone_result.mean()
@@ -139,39 +147,26 @@ class Model(pl.LightningModule):
     def __init__(self, backbone: BackBone, task: "Task", 
                  batch_size: int, learning_rate: float,
                  debug_mode=False, loss_function='mse_loss', 
-                 positional_encoding=False):
+                 positional_encoding=None):
         super().__init__()
         self.backbone = backbone
         self.loss_function = loss_function
-        self.encoder_decoder = task.get_encoder_decoder(backbone, self.loss_function)
+        self.encoder_decoder = task.get_encoder_decoder(backbone, self.loss_function, absolute_positional_encoding=positional_encoding)
         self.task = task
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.debug_mode = debug_mode
         self.save_hyperparameters(self.get_config().model_dump())
         # print(self.hparams)
-        if positional_encoding: 
-            from nugets.models.transforms import get_transform_register
-            transform_register = get_transform_register()
-            # get dataset dimension? 
-            print(self.task.dataset_info())
-            input_dim = self.task.dataset_info()['dim']
-            positional_encoding = transform_register[positional_encoding](d_model=input_dim)
-        self.positional_encoding = positional_encoding
-        print("positional encoding:", self.positional_encoding)
 
     def forward(self, batch: Datapoint) -> Any:
         """Forward pass of the model"""
-        if self.positional_encoding:
-            x = self.positional_encoding(batch)
         encoded, _ = self.encoder_decoder.encode(batch)
         backbone_result, _ = self.backbone(encoded)
         return self.encoder_decoder.decode(backbone_result)
 
     def training_step(self, batch, batch_idx):
         """Training step of the model"""
-        if self.positional_encoding:
-            x = self.positional_encoding(batch)
         encoded, encoder_info = self.encoder_decoder.encode(batch)
         backbone_result, reg_loss = self.backbone(encoded, return_reg_loss=True)
         loss = self.encoder_decoder.compute_loss(batch, backbone_result, encoder_info)
@@ -208,8 +203,6 @@ class Model(pl.LightningModule):
     def prepare_data(self):
         """Prepare the data"""
         self.task.prepare_data()
-        # TODO: this part may need to be modified in the event of 
-        # expensive positional encodings
 
     def train_dataloader(self):
         """Get the training dataloader"""

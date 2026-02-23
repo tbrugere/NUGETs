@@ -10,55 +10,105 @@ import ot
 import torch
 from torch import Tensor
 from torch_heterogeneous_batching import Batch
-from nugets.datasets.datapoint_types import LabeledSetBatch, LabeledSetDatapoint, SetToLabelSetBatch, SetToLabelSetDatapoint
+from nugets.datasets.datapoint_types import QueryDatapoint, QueryBatch
 from nugets.models.backbone import BackBone
 
 from .task import Task
 from .register import register
-from .transforms import SetToLabelSetTransform
 
+# Nearest neighbor: set of query points and point clouds. 
+# Each point cloud gets processed via transformer/sumformer. 
+# What is the datapoint: query vector, q, and point cloud, P.
+# What is the architecture: 
+# NN_1(P) -> returns representation of 
 
-class ExtremalPointTask(Task):
+class SetToQuerySetTransform(Transform):
+    label: Callable[Tensor, Tensor]
+    def __init__(self, label):
+        self.label=label
+
+    def __len__(self):
+        return len(self.inner)
+
+    def __getitem__(self, idx):
+        pointset=self.inner[idx].pointset
+        pointset, label, query =self.label(pointset)
+        return QueryDatapoint(pointset=pointset, label=label, query=query)
+
+class SetQueryTask(Task):
     """
-    This takes a set of points and a direction and outputs a one-hot encoding which indicates 
-    whether it is an extremal point in that direction. 
-    
-    To represent the pointset and the direction, we will collate it all 
-    together as a single point cloud. One additional dimension will be appended to each
-    point to represent if it is part of the point cloud (0) or if it is a direction (1). 
-    Additionally, each direction is randomly generated.
-
+    Input: range/point cloud P, query object q
+    Output: one-hot encoding detailing value in P that fulfills requirements of q. 
     """
-    seed: int = 42 # Seed for randomly generated directions
-    # mean = np.ones(dim)
-    # covariance = np.identity(dim)
 
     def process_dataset(self, dataset):
-        transform = SetToLabelSetTransform(self.label)
+        transform = SetToQuerySetTransform(self.label)
         return transform(dataset)
-    
+
     def datapoint_type(self):
-        return SetToLabelSetDatapoint
-    
+        return QueryDatapoint
+
     def label(self, pointset):
-        import numpy as np 
-        rng = np.random.default_rng(self.seed)
-        direction = rng.multivariate_normal(mean=self.mean, cov=self.covariance)
-        direction = direction/np.linalg.norm(direction, p=2)
-        idx = np.argmax(pointset @ direction)
-        np.hstack((pointset, direction))
         raise NotImplementedError
+
+    def compute_metrics(self, datapoint: QueryDatapoint, results: Tensor):
+        raise NotImplementedError
+@register
+class ExtremalPointTask(SetQueryTask):
+    seed: int = 42 # Seed for randomly generated directions
+    def label(self, pointset):
+        import numpy as np
+        rng = np.random.default_rng(self.seed)
+        dim = self.dataset_info()["dim"]
+        mean = np.ones(dim)
+        cov = np.identity(dim)
+
+        direction = rng.multivariate_normal(mean=mean,  cov=cov)
+        direction = direction/np.linalg.norm(direction, ord=2)
+        idx = np.argmax(pointset @ direction)
+        label = np.zeros(pointset.size()[0])
+        label[idx] = 1.0
+        out = torch.tensor(label).unsqueeze(1)
+        return pointset, out, torch.tensor(direction).type_as(pointset)
     
-    def get_encoder_decoder(self, backbone: BackBone, loss_function: str, **kwargs):
-        from nugets.models.encoder_decoders.set_membership import SetMembershipEncoderDecoder
+    def compute_metrics(self, datapoint:QueryDatapoint, results: Batch):
+        return dict(BCE_loss=0.0)
+
+    def get_encoder_decoder(self, backbone:BackBone, loss_function:str, **kwargs):
+        from nugets.models.encoder_decoders.queries import SetQueryEncoderDecoder
         dataset_info = self.dataset_info()
-        input_dim = dataset_info["dim"]
-        model_input_dim = input_dim + 1
         backbone_input_dim = backbone.get_input_dim()
         backbone_output_dim = backbone.get_output_dim()
+        input_dim = dataset_info["dim"]
         output_dim = 1
-        return SetMembershipEncoderDecoder(input_dim=input_dim, 
-                                           backbone_input_dim=backbone_input_dim, 
-                                           backbone_output_dim=backbone_output_dim,
-                                           output_dim=output_dim,
-                                           loss_function=loss_function)
+        return SetQueryEncoderDecoder(input_dim=input_dim, 
+                                      backbone_input_dim=backbone_input_dim, 
+                                      backbone_output_dim=backbone_output_dim, 
+                                      output_dim=output_dim, 
+                                      loss_function=loss_function)
+
+@register
+class NearestNeighborTask(SetQueryTask):
+    seed: int = 42
+    algorithm: 'auto' # We should be able to also use approximate NN here. 
+    def label(self, pointset):
+        import numpy as np
+        from sklearn.neighbors import NearestNeighbors
+        raw_pointcloud = pointset.numpy()
+        rng = np.random.default_rng(self.seed)
+        q_idx = rng.choice(np.arange(len(pointset)))
+        
+        modified_pointset = np.delete(raw_pointcloud, q_idx, axis=0)
+        nbrs = NearestNeighbors(n_neighbors=1, algorithm=algorithm).fit(modified_pointset)
+        _, indices = nbrs.kneighbrs(raw_pointcloud[q_idx])
+        nn_idx = indices[0][0]
+        label = np.zeros(raw_pointcloud.shape[0])
+        label[nn_idx] = 1.0
+        out = torch.tensor(label).unsqueeze(1)
+
+        return torch.tensor(modified_pointset), out.float(), pointset[q_idx]
+
+    def get_encoder_decoder(self, backbone:BackBone, loss_function:str, **kwargs):
+        
+        raise NotImplementedError
+

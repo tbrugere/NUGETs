@@ -11,16 +11,22 @@ from torch_heterogeneous_batching.batch import Batch
 @dataclass
 class Set_datapoint(Datapoint):
     pointset: torch.Tensor
+    rpe = None # parameter used to store information about rleative positional encodings
 
     @classmethod
     def collate(cls, points):
         input_sets = [p.pointset for p in points]
         set_batch = Batch.from_list(input_sets, order=1)
-        return Set_batch(set_batch)
+        if self.rpe == None: 
+            return Set_batch(pointset=set_batch)
+        # input_rpes = [p.rpe for p in points]
+        # rpe_batch = Batch.from_list(input_rpes, order=1)
+        # return Set_batch(pointset=set_batch, rpe=rpe_batch)
 
 @dataclass
 class Set_batch(Datapoint):
     pointset: Batch
+    # rpe: Batch | None = None
 
 @dataclass
 class Graph_datapoint(Set_datapoint):
@@ -56,6 +62,8 @@ class DistanceDatapoint(Datapoint):
     set1: Tensor
     set2: Tensor
     distance: Tensor
+    # rpe_set1: None | torch.Tensor = None
+    # rpe_set2: None | torch.Tensor = None
 
     @staticmethod
     def collate(batch):
@@ -69,6 +77,8 @@ class DistanceBatch(Datapoint):
     set1: Batch
     set2: Batch
     distance: Tensor
+    # rpe_set1: Batch | None = None
+    # rpe_set2: Batch | None = None
 
 @dataclass
 class LabeledSetBatch(Datapoint):
@@ -101,3 +111,22 @@ class SetToLabelSetDatapoint(Datapoint):
         pointset = Batch.from_list([x.pointset for x in batch], order=1)
         labelset = Batch.from_list([x.labelset for x in batch], order=1)
         return SetToLabelSetBatch(pointset=pointset, labelset=labelset)
+
+@dataclass
+class QueryDatapoint(Datapoint):
+    pointset: Tensor
+    query: Tensor
+    label: Tensor
+
+    @staticmethod
+    def collate(batch):
+        pointset = Batch.from_list([x.pointset for x in batch], order=1)
+        labelset = Batch.from_list([x.label for x in batch], order=1)
+        queryset = torch.stack([x.query for x in batch])
+        return QueryBatch(pointset=pointset, label=labelset, queryset=queryset)
+
+@dataclass
+class QueryBatch(Datapoint):
+    pointset: Batch
+    queryset: Tensor
+    label: Batch|Tensor
