@@ -1,15 +1,15 @@
 task:
   type: MinimumEnclosingAnnulusTask
-  dataset: GrowingCircles
+  dataset: SQUIDBoundaries
   dataset_config:
-    length: 10
-    min_points: 50
-    max_points: 100
-  ood_dataset: GrowingCircles
+    normalization: True
+  ood_dataset: GaussianBlobs
   ood_config:
-    length: 10
+    length: 300
     min_points: 200
     max_points: 300
+    centers: 4
+    dim: 2
 backbone:
   type: Transformer
   n_heads: 2
@@ -19,4 +19,4 @@ backbone:
   feed_forward_hidden_dim: 128
 batch_size: 128
 learning_rate: 1.e-4
-loss_function: minimum_annulus_radius_error
+loss_function: minimum_annulus_error

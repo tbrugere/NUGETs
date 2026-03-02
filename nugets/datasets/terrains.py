@@ -62,6 +62,7 @@ class NZDEM(Dataset[Set_datapoint]):
                     which=which, seed=split_seed, 
                     splits=["train", "val"], percents=[.9, .1])
             inner = split_transform(inner)
+        inner = inner - inner.mean(dim=0, keepdim=True) # center dataset
         self.inner = torch.tensor(inner, dtype=torch.float32)
 
     def prepare(self, tif_file_path):

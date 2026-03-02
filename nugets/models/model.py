@@ -87,6 +87,7 @@ class EncoderDecoderWithProjection(EncoderDecoder):
         self.output_dim = output_dim 
         self.backbone_input_dim = backbone_input_dim
         self.backbone_output_dim = backbone_output_dim 
+        
     def decode(self, backbone_result: Any) -> Any:
         return self.out_proj(backbone_result)
 

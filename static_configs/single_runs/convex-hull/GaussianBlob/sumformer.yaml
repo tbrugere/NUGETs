@@ -1,0 +1,26 @@
+task:
+  type: ConvexHullMembershipTask
+  dataset: GaussianBlobs
+  dataset_config:
+    length: 3000
+    min_points: 50
+    max_points: 100
+    centers: 4
+    dim: 2
+  ood_dataset: GaussianBlobs
+  ood_config:
+    length: 300
+    min_points: 200
+    max_points: 300
+    centers: 4
+    dim: 2
+backbone:
+  type: Sumformer
+  n_heads: 2
+  n_layers: 2
+  d_model: 128
+  key_dim: 512
+  feed_forward_hidden_dim: 128
+batch_size: 10
+learning_rate: 1.e-4
+loss_function: scatter_binary_cross_entropy

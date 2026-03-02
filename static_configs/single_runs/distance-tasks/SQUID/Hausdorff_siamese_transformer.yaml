@@ -1,0 +1,28 @@
+task:
+  type: HausdorffDistanceTask
+  dataset: SQUIDBoundaries
+  dataset_config:
+    normalization: True
+  ood_dataset: GaussianBlobs
+  ood_config:
+    length: 10
+    min_points: 150
+    max_points: 200
+    centers: 4
+backbone:
+  type: CoupledNetwork
+  latent_dimension: 128
+  p: 2
+  reconstruct_input: False
+  decoder_distance: SinkhornLoss
+  use_siamese: True
+  encoder: 
+    type: Transformer
+    n_heads: 2
+    n_layers: 2
+    d_model: 128
+    key_dim: 512
+    feed_forward_hidden_dim: 128
+batch_size: 128
+learning_rate: 1.e-4
+debug_mode: True

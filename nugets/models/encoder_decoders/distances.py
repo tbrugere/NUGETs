@@ -22,7 +22,7 @@ class DistanceEncoderDecoder(EncoderDecoder):
                  backbone_output_dim: int, 
                  same_input_proj=True, 
                  backbone_reconstructs=False, 
-                 loss_function='mse_loss'):
+                 loss_function='mse_loss', **kwargs):
         super().__init__()
         in1, in2 = input_dim
         back_in1, back_in2 = backbone_input_dim

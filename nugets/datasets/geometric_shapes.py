@@ -1,11 +1,12 @@
 from typing import Literal
 import numpy as np
 import torch
-
 from ml_lib.datasets.datasets.randomly_generated_dataset import GeneratedDataset
 
 from nugets.datasets.register import register as dataset_register
 from .datapoint_types import Point_datapoint, Set_datapoint
+
+from scipy.stats import qmc
 
 
 ################################## point-level datasets
@@ -63,26 +64,46 @@ class Torus4D(GeneratedDataset[Point_datapoint]):
 
 ################################## set-level datasets
 @dataset_register 
-class GaussianBlob(GeneratedDataset[Set_datapoint]):
+class GaussianBlobs(GeneratedDataset[Set_datapoint]):
     datatype = Set_datapoint
     dim: int
     min_points: int
     max_points: int
+    centers: int
+    seed: int = 42
+    bound: int = 10
 
-    def __init__(self, dim: int=2, min_points=8, max_points=32, **kwargs):
+    def __init__(self, dim: int=2, min_points=8, max_points=32, centers=3, **kwargs):
         super().__init__(**kwargs)
         self.dim=dim 
         self.min_points = min_points
         self.max_points = max_points
         self.mean = np.ones(dim)
         self.covariance = np.identity(dim)
-    
+        self.centers = centers
+        self.center_sampler = qmc.LatinHypercube(d=self.dim, seed=self.seed)    
+
     def prepare(self):
         pass
     
     def generate_item(self, rng):
+        unit_sample = self.center_sampler.random(n=self.centers)
+        sample_means = qmc.scale(unit_sample, [-self.bound, -self.bound], [self.bound, self.bound])
+
         n_points = rng.integers(self.min_points, self.max_points)
-        points = rng.multivariate_normal(mean=self.mean, cov=self.covariance, size=n_points)
+        cuts = np.random.choice(np.arange(1, n_points), self.centers - 1, replace=False)
+        cuts = np.sort(cuts)
+        cuts = np.concatenate(([0], cuts, [n_points]))
+        partitions = np.diff(cuts)
+        
+        points_ = []
+        for i in range(self.centers):
+            center = sample_means[i]
+            p_size = partitions[i]
+            pts = rng.multivariate_normal(mean=center, cov=self.covariance, size=p_size)
+            points_.append(pts)
+        points = np.concatenate(points_)
+        # points = rng.multivariate_normal(mean=self.mean, cov=self.covariance, size=n_points)
         return Set_datapoint(pointset=torch.as_tensor(points, dtype=torch.float32))
     
     def dataset_parameters(self):

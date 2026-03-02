@@ -26,6 +26,8 @@ class SQUIDBoundaries(Dataset[Set_datapoint]):
         # Retrieve from data folder
         inner = np.load('nugets/datasets/data/squid-data.npy')
         # TODO: Normalize incoming raw data
+        if normalization:
+            inner = inner - np.expand_dims(np.mean(inner, axis=0), 0) # center dataset
         # If this dataset is requested as part of an OOD dataset, return its validation set
         if which == "ood": 
             which = "val"
@@ -35,6 +37,7 @@ class SQUIDBoundaries(Dataset[Set_datapoint]):
                     which=which, seed=split_seed, 
                     splits=["train", "val"], percents=[.9, .1])
             inner = split_transform(inner)
+        
         self.inner = torch.tensor(inner, dtype=torch.float32)
     
     def __len__(self):

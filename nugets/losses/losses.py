@@ -28,7 +28,8 @@ def minimum_ball_radius_error(r, predicted_r, **kwargs):
     return err
 
 def minimum_annulus_error(c, predicted_c, inner_r, predicted_inner_r, outer_r, predicted_outer_r, **kwargs):
-    raise NotImplementedError
+    err = torch.mean(torch.linalg.norm(c - predicted_c, axis=1)) + minimum_annulus_radius_error(inner_r, predicted_inner_r, outer_r, predicted_outer_r)
+    return err
 
 def minimum_annulus_radius_error(inner_r, predicted_inner_r, outer_r, predicted_outer_r, **kwargs):
     inner_r_err = mse_loss(inner_r, predicted_inner_r)

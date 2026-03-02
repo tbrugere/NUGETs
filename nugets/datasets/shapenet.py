@@ -20,17 +20,19 @@ class ShapeNet(Dataset[Set_datapoint]):
                  which="train"):
         root_dir = Path("workdir/datasets/raw")
         root_dir.mkdir(exist_ok=True, parents=True)
-        is_train_or_val = which in ("train", "val")
+        if which == "ood": 
+            which = "val"
+        is_train_or_val = which in ("train", "val", "test")
+        
         inner: Pyg_ShapeNet|SplitTransform = Pyg_ShapeNet(root=str(root_dir), 
-                             train=is_train_or_val, 
-                             name= name)
+                             split=is_train_or_val)
 
         if is_train_or_val:
             split_transform: SplitTransform = SplitTransform(
                     which=which, seed=split_seed, 
                 splits=["train", "val"], percents=[.9, .1])
             inner = split_transform(inner)
-
+        inner = inner - dataset.mean(dim=0, keepdim=True) # center dataset
         self.inner = inner
 
     def __len__(self):
