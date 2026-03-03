@@ -44,3 +44,24 @@ def scatter_binary_cross_entropy(predicted, target, index, reduction="mean", **k
     unrolled = binary_cross_entropy_with_logits(input=predicted, target=target, reduction="none")
     per_set_bce_error=scatter(src=unrolled, index=index, reduce=reduction)
     return per_set_bce_error.mean()
+
+def binary_focal_loss(inputs, targets, gamma=2):
+    """ Focal loss for binary classification. """
+    probs = torch.sigmoid(inputs)
+    targets = targets.float()
+
+    # Compute binary cross entropy
+    bce_loss = binary_cross_entropy_with_logits(inputs, targets, reduction='none')
+
+    # Compute focal weight
+    p_t = probs * targets + (1 - probs) * (1 - targets)
+    focal_weight = (1 - p_t) ** gamma
+
+    loss = focal_weight * bce_loss
+
+    return loss
+
+def scatter_binary_focal_loss(predicted, target, index, reduction='mean', **kwargs):
+    unrolled = binary_focal_loss(inputs=predicted, targets=target)
+    per_set_fl_error = scatter(src=unrolled, index=index, reduce=reduction)
+    return per_set_fl_error.mean()

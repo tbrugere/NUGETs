@@ -10,6 +10,7 @@ import ot
 import torch
 from torch import Tensor
 from torch_heterogeneous_batching import Batch
+from torch_scatter import scatter
 from nugets.datasets.datapoint_types import LabeledSetBatch, LabeledSetDatapoint, SetToLabelSetBatch, SetToLabelSetDatapoint
 from nugets.models.backbone import BackBone
 from nugets.losses.losses import scatter_binary_cross_entropy
@@ -20,7 +21,8 @@ from .transforms import SetLabelTransform, SetToLabelSetTransform
 
 class SetMembershipTask(Task):
     """
-    Predict membership in a set
+    Predict membership in a set.
+    Used as the base class for ConvexHulls and AlphaShapes
     """
     def process_dataset(self, dataset):
         transform = SetToLabelSetTransform(self.label)
@@ -33,12 +35,39 @@ class SetMembershipTask(Task):
         raise NotImplementedError
 
     def compute_metrics(self, datapoint: SetToLabelSetDatapoint, results: Batch):
-        # TODO: Add more logging metrics here
+        """
+        Tracking accuracy and binary cross entropy loss
+        """
+        
         membership = datapoint.labelset.data.squeeze(1)
-        predicted_membership=results.data.squeeze(1)
+        predicted_membership_logits=results.data.squeeze(1)
         batch_index = datapoint.labelset.batch
-        result = scatter_binary_cross_entropy(predicted=predicted_membership, target=membership, index=batch_index)
-        return dict(BCE_loss=result)
+
+        # Average accuracy per point cloud
+        pm_probs = torch.sigmoid(predicted_membership_logits)
+        predicted_membership = (pm_probs >=0.5).int()
+        membership = membership.int()
+        correct = (predicted_membership == membership).int()
+        accuracy = scatter(src=correct, index=batch_index, reduce="mean")
+
+        #precision
+        tn_mask = membership == 0
+        tp_mask = membership == 1
+        sum_tps = scatter(src=(predicted_membership[tp_mask] == 1).int(), index=batch_index[tp_mask], reduce='sum')
+        sum_fps = scatter(src=(predicted_membership[tn_mask] == 1).int(), index=batch_index[tn_mask], reduce='sum')
+        precision_per_cloud = sum_tps/(sum_tps + sum_fps + 1e-5)
+
+        # Recall
+        tp_mask = membership == 1
+        sum_fns = scatter(src=(predicted_membership[tp_mask] == 0).int(), index=batch_index[tp_mask], reduce='sum')
+
+        recall_per_cloud = sum_tps/(sum_tps + sum_fns)
+        # f1 score
+        f1 = 2 * sum_tps/(2*sum_tps + sum_fps + sum_fns + 1e-5)
+        return dict( accuracy=torch.mean(accuracy, dtype=torch.float32), 
+                     recall=torch.mean(recall_per_cloud, dtype=torch.float32),
+                     precision=torch.mean(precision_per_cloud, dtype=torch.float32), 
+                     f1 = torch.mean(f1, dtype=torch.float32))
     
     def get_encoder_decoder(self, backbone: BackBone, loss_function:str, **kwargs):
         from nugets.models.encoder_decoders.set_membership import SetMembershipEncoderDecoder

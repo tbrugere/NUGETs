@@ -13,7 +13,7 @@ from torch_geometric.utils import softmax
 class SetMembershipEncoderDecoder(EncoderDecoderWithProjection):
     def __init__(self, loss_function: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.allowed_losses = ["scatter_binary_cross_entropy"]
+        self.allowed_losses = ["scatter_binary_cross_entropy", "scatter_binary_focal_loss"]
         if loss_function not in self.allowed_losses:
             raise ValueError(f"only losses in {self.allowed_losses} allowed for set membership")
         self.loss_function = getattr(Losses, loss_function)

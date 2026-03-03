@@ -4,6 +4,7 @@ from torch_geometric.nn.resolver import aggregation_resolver
 from nugets.models.backbone import BackBone, int_hyperparameter,hyperparameter, model_attribute
 from nugets.models.backbones.register import register
 
+
 @register
 class Sumformer(BackBone):
     """
@@ -17,6 +18,7 @@ class Sumformer(BackBone):
     aggregation: str = hyperparameter(type=str, description="sequence aggregation function", default='none')
     
     sumformer: Sumformer_nn = model_attribute()
+    layer_norm_eps: float = hyperparameter(type=float, description="controls layernorm eps", default=1e-3)
 
     def __setup__(self):
         self.sumformer = Sumformer_nn(
@@ -24,6 +26,8 @@ class Sumformer(BackBone):
             hidden_dim = self.feed_forward_hidden_dim,
             num_blocks=self.n_layers
         )
+        for i in range(self.n_layers):
+            self.sumformer[i].norm.eps=self.layer_norm_eps
         aggregation_args = {}
         if self.aggregation != "none":
             self.aggregation_fn = aggregation_resolver(self.aggregation, **aggregation_args)
