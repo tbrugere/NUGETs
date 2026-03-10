@@ -49,11 +49,13 @@ class MEAEncoderDecoder(ShapefittingEncoder):
         super().__init__(*args, **kwargs)
         self.loss_function = getattr(Losses, loss_function)
 
-    # output d-dimensional center and two radii
     def compute_loss(self, 
                     batch: LabeledSetBatch,
                     backbone_result: Tensor,
                     encoder_info):
+        """
+        Output: center, inner radius, outer radius
+        """
         input_dim = batch.pointset.n_features
         result = self.decode(backbone_result)
         predicted_centers = result[:, :input_dim]

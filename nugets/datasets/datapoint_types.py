@@ -121,9 +121,9 @@ class QueryDatapoint(Datapoint):
     @staticmethod
     def collate(batch):
         pointset = Batch.from_list([x.pointset for x in batch], order=1)
-        labelset = Batch.from_list([x.label for x in batch], order=1)
+        label = torch.stack([x.label for x in batch])
         queryset = torch.stack([x.query for x in batch])
-        return QueryBatch(pointset=pointset, label=labelset, queryset=queryset)
+        return QueryBatch(pointset=pointset, label=label, queryset=queryset)
 
 @dataclass
 class QueryBatch(Datapoint):

@@ -157,6 +157,7 @@ class Model(pl.LightningModule):
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.debug_mode = debug_mode
+        self.positional_encoding = positional_encoding
         self.save_hyperparameters(self.get_config().model_dump())
         # print(self.hparams)
 
@@ -293,7 +294,7 @@ class Model(pl.LightningModule):
         if hasattr(config.backbone, "positional_encoding"):
             encoding = config.backbone.positional_encoding
         else:
-            encoding = hasattr(config.backbone, "positional_encoding")
+            encoding = None
         return cls(backbone=config.backbone.load(), task = config.task.load(), 
                  batch_size= config.batch_size, learning_rate= config.learning_rate, 
                  debug_mode=config.debug_mode, loss_function = config.loss_function, 
@@ -307,7 +308,9 @@ class Model(pl.LightningModule):
             task=task_conf, 
             batch_size = self.batch_size, 
             learning_rate = self.learning_rate, 
-            debug_mode = self.debug_mode
+            debug_mode = self.debug_mode,
+            loss_function = self.loss_function,
+            positional_encoding=self.positional_encoding
         )
 
     def consistent_hash(self):

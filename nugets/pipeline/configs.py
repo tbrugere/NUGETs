@@ -1,5 +1,5 @@
 import hashlib
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 from logging import getLogger
 from pathlib import Path
 import pydantic
@@ -88,8 +88,9 @@ class ModelConf(pydantic.BaseModel, ConfigConsistentHashMixin):
     backbone: BackboneConf
     batch_size: int
     learning_rate: float
+    loss_function: str
+    positional_encoding: str | None = None
     debug_mode: bool = False
-    loss_function: str = 'mse_loss'
     model_config = pydantic.ConfigDict(extra="forbid")
 
 

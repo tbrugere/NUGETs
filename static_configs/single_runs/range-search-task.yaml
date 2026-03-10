@@ -1,19 +1,19 @@
 task:
-  type: NearestNeighborRegressionTask
-  dataset: GaussianBlobs
+  type: RangeQueryTask
+  dataset: RandomPolygons
   dataset_config:
     length: 1000
-    min_points: 50
-    max_points: 100
-  ood_dataset: GaussianBlobs
+    min_points: 5
+    max_points: 8
+  ood_dataset: RandomPolygons
   ood_config:
     length: 10
-    min_points: 150
-    max_points: 200
+    min_points: 5
+    max_points: 12
 backbone:
   type: QueryNetwork
   encoder: 
-    type: Sumformer
+    type: Transformer
     n_heads: 1
     n_layers: 2
     d_model: 128
@@ -22,4 +22,4 @@ backbone:
 batch_size: 64
 learning_rate: 1.e-4
 debug_mode: True
-loss_function: mse_loss
+loss_function: binary_cross_entropy_with_logits

@@ -39,6 +39,7 @@ def minimum_annulus_radius_error(inner_r, predicted_inner_r, outer_r, predicted_
 def minimum_enclosing_ellipse_error(**kwargs):
     raise NotImplementedError
 
+
 def scatter_binary_cross_entropy(predicted, target, index, reduction="mean", **kwargs):
     " Batch compatible cross entropy loss "
     unrolled = binary_cross_entropy_with_logits(input=predicted, target=target, reduction="none")

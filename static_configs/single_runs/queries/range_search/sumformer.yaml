@@ -1,0 +1,24 @@
+task:
+  type: RangeQueryTask
+  dataset: RandomPolygons
+  dataset_config:
+    length: 1000
+    min_points: 5
+    max_points: 8
+  ood_dataset: RandomPolygons
+  ood_config:
+    length: 10
+    min_points: 5
+    max_points: 12
+backbone:
+  type: QueryNetwork
+  encoder: 
+    type: Sumformer
+    n_heads: 2
+    n_layers: 3
+    d_model: 64
+    feed_forward_hidden_dim: 128
+batch_size: 64
+learning_rate: 1.e-4
+debug_mode: True
+loss_function: binary_cross_entropy_with_logits
