@@ -89,11 +89,6 @@ class CoupledNetwork(BackBone):
 
         self.decoder_loss_fn = getattr(Losses, self.decoder_distance)()
 
-        if self.aggregation == "none":
-            raise ValueError('Aggregation function must not be none for Coupled or Siamese networks')
-        aggregation_args = {}
-        self.aggregation_fn = aggregation_resolver(self.aggregation, **aggregation_args)
-
             
     def forward(self, batch, return_reg_loss=False):
         set1, set2 = batch
@@ -103,8 +98,22 @@ class CoupledNetwork(BackBone):
         v2, _ = self.encoder2(set2)
 
         # TODO: Fix aggregation so that we can use any aggregation 
-        v1 = self.encoder_projection_1(v1.mean())
-        v2 = self.encoder_projection_2(v2.mean())
+        match self.aggregation:
+            case 'mean':
+                agg1 = v1.mean()
+                agg2 = v2.mean()
+            case 'sum':
+                agg1 = v1.sum()
+                agg2 = v2.sum()
+            case 'max':
+                agg1 = v1.segment(reduce='max')
+                agg2 = v2.segment(reduce='max')
+            case other: 
+                agg1 = v1.mean()
+                agg2 = v2.mean()
+            
+        v1 = self.encoder_projection_1(agg1)
+        v2 = self.encoder_projection_2(agg2)
 
         if self.use_siamese:
             predicted_distances = torch.linalg.vector_norm(v1 - v2, ord=self.p, dim=-1)

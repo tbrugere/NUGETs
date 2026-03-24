@@ -22,7 +22,9 @@ class DistanceEncoderDecoder(EncoderDecoder):
                  backbone_output_dim: int, 
                  same_input_proj=True, 
                  backbone_reconstructs=False, 
-                 loss_function='mse_loss', **kwargs):
+                 loss_function='mse_loss',
+                 absolute_positional_encoding: str | None = None, 
+                 **kwargs):
         super().__init__()
         in1, in2 = input_dim
         back_in1, back_in2 = backbone_input_dim
@@ -39,7 +41,18 @@ class DistanceEncoderDecoder(EncoderDecoder):
             self.sinkhorn_loss = self.decode_proj1 = self.decode_proj2 = None
         self.loss_function = getattr(Losses, loss_function)
 
+        # set positional encoding here
+        if absolute_positional_encoding:
+            from nugets.models.transforms import get_transform_register
+            transform_register = get_transform_register()
+            dim = self.input_dim
+            absolute_positional_encoding = transform_register[absolute_positional_encoding](d_model=dim)
+        self.absolute_positional_encoding = absolute_positional_encoding
+
     def encode(self, batch: DistanceBatch):
+        if self.absolute_positional_encoding: 
+            batch.set1.data = self.absolute_positional_encoding(batch.set1)
+            batch.set2.data = self.absolute_positional_encoding(batch.set2)
         return (self.in_proj1(batch.set1), self.in_proj2(batch.set2)), None
 
     def decode(self, result: DistanceBackboneResult):

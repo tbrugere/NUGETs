@@ -5,7 +5,7 @@ from torch import nn
 from nugets.models.backbone import BackBone, int_hyperparameter, hyperparameter, other_backbone_hyperparameter, model_attribute
 from nugets.models.backbones.register import register
 
-
+@register
 class SetNN(BackBone):
     """
     Neural network for point sets: \phi(AGGR_{x \in P}(h(x)))

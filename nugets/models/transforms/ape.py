@@ -9,8 +9,6 @@ from torch_heterogeneous_batching import Batch
 from .register import register as transform_register
 from .transform import PositionalEncodingTransform
 
-
-
 @transform_register
 class SinusoidalAbsolutePositionalEncoding(PositionalEncodingTransform):
     def __init__(self, d_model: int, max_len: int = 5000):

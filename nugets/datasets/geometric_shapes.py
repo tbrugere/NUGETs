@@ -8,7 +8,7 @@ from .datapoint_types import Point_datapoint, Set_datapoint
 
 from scipy.stats import qmc
 import warnings
-from polygenerator import random_polygon
+from polygenerator import random_polygon, random_convex_polygon
 
 
 ################################## point-level datasets
@@ -179,7 +179,47 @@ class RandomPolygons(GeneratedDataset[Set_datapoint]):
     def generate_item(self, rng):
         n_points = rng.integers(self.min_points, self.max_points)
         polygon = random_polygon(n_points)
-        polygon = qmc.scale(polygon, [-self.scaling, -self.scaling], [self.scaling, self.scaling])
+        low = self.scaling - 1.0 if self.scaling > 1.0 else self.scaling
+        bb = rng.uniform(low=low, high=self.scaling+2.0)
+        shift = rng.uniform(low=0.0, high=1.0, size=self.dim)
+        polygon = qmc.scale(polygon, [-bb, -bb], [bb, bb]) + shift
+        return Set_datapoint(pointset=torch.as_tensor(polygon, dtype=torch.float32))
+    
+    def dataset_parameters(self):
+        return {'dim': self.dim, 'min_points': self.min_points, 'max_points': self.max_points, 'bound': self.scaling}
+
+
+@dataset_register
+class RandomConvexPolygons(GeneratedDataset[Set_datapoint]):
+    """
+    Generate a set of points representing a random polygon.
+    Used for range search queries.
+    """
+    datatype = Set_datapoint
+    dim: int
+    min_points: int
+    max_points: int
+    scaling: float
+
+    def __init__(self, dim: int = 2, min_points: int=5, max_points: int=12, scaling: float=1.0, **kwargs):
+        super().__init__(**kwargs)
+        if max_points > 20:
+            warnings.warn("Generated polygon can possibly have many points. May be slow to generate.")
+        self.dim = dim
+        self.min_points = min_points
+        self.max_points = max_points
+        self.scaling = scaling
+
+
+    def generate_item(self, rng):
+        center_shift = rng.uniform(low=-self.scaling, high=self.scaling, size=self.dim)
+        n_points = rng.integers(self.min_points, self.max_points)
+        polygon = random_convex_polygon(n_points)
+        polygon = polygon + center_shift
+        # low = self.scaling - 1.0 if self.scaling > 1.0 else self.scaling
+        # bb = rng.uniform(low=low, high=self.scaling+2.0)
+        # shift = rng.uniform(low=0.0, high=1.0, size=self.dim)
+        # polygon = qmc.scale(polygon, [-bb, -bb], [bb, bb]) + shift
         return Set_datapoint(pointset=torch.as_tensor(polygon, dtype=torch.float32))
     
     def dataset_parameters(self):

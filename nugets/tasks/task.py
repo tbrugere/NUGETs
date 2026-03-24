@@ -162,6 +162,7 @@ class Task():
             self.cache_processed_dataset(which, skip_if_exists=True, 
                                          try_getting_from_cloud=False, 
                                          upload_to_cloud = False)
+        #TODO: compute relative positional encodings? 
 
     def get_dataset_cloud_object(self, which):
         bucket = Config.get_processed_dataset_bucket()

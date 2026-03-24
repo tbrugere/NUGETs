@@ -91,8 +91,6 @@ def train_from_dict(config, **kwargs):
 
 def train_from_config(config_file,*, profile=False, n_epochs):
     from nugets.models.model import Model
-    import torch
-    import torch_scatter
     model = Model.from_config_file(config_file)
     train_model(model, profile=profile, n_epochs=n_epochs)
 

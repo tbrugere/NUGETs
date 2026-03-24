@@ -99,10 +99,10 @@ class EncoderDecoderWithProjection(EncoderDecoder):
 class EncoderDecoderToVector(EncoderDecoder):
     in_proj: nn.Linear
     out_proj: nn.Linear
-    aggregation: str = "none" # TODO: Enable changes in aggregation
 
     def __init__(self, input_dim: int, backbone_input_dim: int,
-                 backbone_output_dim: int, output_dim: int|None):
+                 backbone_output_dim: int, output_dim: int|None, 
+                 aggregation:str = 'none'):
         super().__init__()
         if output_dim is None:
             output_dim = input_dim
@@ -113,9 +113,21 @@ class EncoderDecoderToVector(EncoderDecoder):
         self.output_dim = output_dim 
         self.backbone_input_dim = backbone_input_dim
         self.backbone_output_dim = backbone_output_dim 
+
+        self.aggregation = aggregation
     
     def decode(self, backbone_result: Any) -> Any:
-        result = backbone_result.mean()
+        match self.aggregation:
+            case "mean":
+                result = backbone_result.mean()
+            case "sum":
+                result = backbone_result.sum()
+            case "max":
+                result = backbone_result.segment(reduce='max')
+            case other:
+                log.warn("no aggregation set, defaulting to mean")
+                result = backbone_result.mean()
+            
         return self.out_proj(result)
 
     def compute_loss(self, batch: Datapoint,  
@@ -148,11 +160,15 @@ class Model(pl.LightningModule):
     def __init__(self, backbone: BackBone, task: "Task", 
                  batch_size: int, learning_rate: float,
                  debug_mode=False, loss_function='mse_loss', 
-                 positional_encoding=None):
+                 positional_encoding=None, aggregation='none'):
         super().__init__()
         self.backbone = backbone
         self.loss_function = loss_function
-        self.encoder_decoder = task.get_encoder_decoder(backbone, self.loss_function, absolute_positional_encoding=positional_encoding)
+        self.aggregation = aggregation
+        self.encoder_decoder = task.get_encoder_decoder(backbone, 
+                                                        loss_function=self.loss_function, 
+                                                        absolute_positional_encoding=positional_encoding, 
+                                                        aggregation=self.aggregation)
         self.task = task
         self.batch_size = batch_size
         self.learning_rate = learning_rate
@@ -223,6 +239,8 @@ class Model(pl.LightningModule):
 
     @classmethod
     def argument_parser(cls, parser):
+        # TODO: this method need to be updated but not high priority because it is not recommended to load
+        # the model through the arg parser. The method below, `from_args`, should also be updated. 
         from nugets.models.backbones import get_backbones_register
         from nugets.tasks import get_tasks_register
         backbone_register = get_backbones_register()
@@ -298,7 +316,7 @@ class Model(pl.LightningModule):
         return cls(backbone=config.backbone.load(), task = config.task.load(), 
                  batch_size= config.batch_size, learning_rate= config.learning_rate, 
                  debug_mode=config.debug_mode, loss_function = config.loss_function, 
-                 positional_encoding=encoding)
+                 positional_encoding=encoding, aggregation=config.aggregation)
 
     def get_config(self):
         backbone_conf = self.backbone.get_config()
@@ -310,7 +328,8 @@ class Model(pl.LightningModule):
             learning_rate = self.learning_rate, 
             debug_mode = self.debug_mode,
             loss_function = self.loss_function,
-            positional_encoding=self.positional_encoding
+            positional_encoding=self.positional_encoding,
+            aggregation=self.aggregation
         )
 
     def consistent_hash(self):

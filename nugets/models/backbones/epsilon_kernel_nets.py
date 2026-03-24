@@ -2,7 +2,6 @@ from typing import Callable
 from ml_lib.models.layers import MLP
 from torch_heterogeneous_batching import Batch
 from torch_heterogeneous_batching.batch import BatchIndicator
-from torch_heterogeneous_batching.nn.transformer import Transformer as Transformer_nn
 import torch
 from torch import nn
 
@@ -39,7 +38,7 @@ class EpsilonKernelNetwork(BackBone):
     def forward(self, batch: Batch, return_reg_loss: bool=False):
         del return_reg_loss
 
-        out = self.set_encoder(out)
+        out = self.set_encoder(batch)
         out = softmax(src=out, index=out.batch)
 
         # TODO: There should be a smarter/faster way to implement this approximation. Maybe with torch.einsum?
@@ -53,5 +52,5 @@ class EpsilonKernelNetwork(BackBone):
             coresets.append(coreset)
             start = end
 
-        output_ptset = Batch.from_list(coresets, order=1).to(device)
+        output_ptset = Batch.from_list(coresets, order=1)
         return output_ptset, None
