@@ -88,8 +88,9 @@ class CoupledNetwork(BackBone):
             self.encoder_projection_2 = nn.Identity()
 
         self.decoder_loss_fn = getattr(Losses, self.decoder_distance)()
+        
+        
 
-            
     def forward(self, batch, return_reg_loss=False):
         set1, set2 = batch
         batch_size = set1.batch_size

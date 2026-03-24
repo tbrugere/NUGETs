@@ -1,24 +1,20 @@
 task:
   type: HausdorffDistanceTask
-  dataset: GaussianBlobs
+  dataset: ModelNetPointset
   dataset_config:
-    length: 100
-    min_points: 50
-    max_points: 100
-    centers: 4
-  ood_dataset: GaussianBlobs
+    name: 10
+    size: 256
+  ood_dataset: ModelNetPointset
   ood_config:
-    length: 10
-    min_points: 150
-    max_points: 200
-    centers: 4
+    name: 10
+    size: 512
 backbone:
   type: CoupledNetwork
   latent_dimension: 32
   p: 1
   reconstruct_input: False
   decoder_distance: SinkhornLoss
-  use_siamese: False
+  use_siamese: True
   aggregation: max
   encoder: 
     type: Transformer

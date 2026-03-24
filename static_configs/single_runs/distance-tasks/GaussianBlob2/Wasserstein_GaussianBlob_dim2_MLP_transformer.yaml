@@ -19,6 +19,7 @@ backbone:
   reconstruct_input: False
   decoder_distance: SinkhornLoss
   use_siamese: False
+  aggregation: 'max'
   encoder: 
     type: Transformer
     n_heads: 2

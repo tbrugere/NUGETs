@@ -89,7 +89,7 @@ class ModelConf(pydantic.BaseModel, ConfigConsistentHashMixin):
     batch_size: int
     learning_rate: float
     loss_function: str
-    aggregation: str
+    aggregation: str = 'none'
     positional_encoding: str | None = None
     debug_mode: bool = False
     model_config = pydantic.ConfigDict(extra="forbid")
