@@ -2,11 +2,11 @@ task:
   type: HausdorffDistanceTask
   dataset: ModelNetPointset
   dataset_config:
-    name: 10
+    name: "10"
     size: 256
   ood_dataset: ModelNetPointset
   ood_config:
-    name: 10
+    name: "10"
     size: 512
 backbone:
   type: CoupledNetwork
