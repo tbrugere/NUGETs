@@ -32,7 +32,7 @@ class EpsilonKernelNetwork(BackBone):
     set_encoder: BackBone = model_attribute()
 
     def __setup__(self):
-        self.set_encoder: BackBone = model_attribute()
+        self.set_encoder = self.encoder.load()
     
 
     def forward(self, batch: Batch, return_reg_loss: bool=False):
@@ -54,3 +54,9 @@ class EpsilonKernelNetwork(BackBone):
 
         output_ptset = Batch.from_list(coresets, order=1)
         return output_ptset, None
+    
+    def get_input_dim(self):
+        self.set_encoder.get_input_dim()
+
+    def get_output_dim(self):
+        self.set_encoder.get_output_dim()

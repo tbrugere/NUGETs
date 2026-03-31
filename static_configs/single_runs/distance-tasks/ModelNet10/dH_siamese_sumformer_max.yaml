@@ -2,21 +2,23 @@ task:
   type: HausdorffDistanceTask
   dataset: ModelNetPointset
   dataset_config:
-    name: "10"
+    name: '10'
     size: 256
+    length: 200
   ood_dataset: ModelNetPointset
   ood_config:
-    name: "10"
+    name: '10'
     size: 512
+    length: 200
 backbone:
   type: CoupledNetwork
   latent_dimension: 32
   p: 1
-  reconstruct_input: False
+  reconstruct_input: false
   decoder_distance: SinkhornLoss
-  use_siamese: True
+  use_siamese: true
   aggregation: max
-  encoder: 
+  encoder:
     type: Sumformer
     n_heads: 2
     n_layers: 2
@@ -27,6 +29,6 @@ backbone:
     decoder_hidden_dim: 256
     decoder_n_layers: 3
 batch_size: 128
-learning_rate: 1.e-4
-debug_mode: True
+learning_rate: 0.0001
+debug_mode: true
 loss_function: mse_loss

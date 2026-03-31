@@ -20,7 +20,6 @@ from .task import Task
 from .register import register
 
 
-
 def triangular_index(i):
     r"""Decomposes i into (k, l) where k < l
 

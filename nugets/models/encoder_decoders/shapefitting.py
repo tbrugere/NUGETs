@@ -12,6 +12,7 @@ from nugets.datasets.datapoint_types import LabeledSetBatch, LabeledSetDatapoint
 
 class ShapefittingEncoder(EncoderDecoderToVector):
     def __init__(self, loss_function: str, absolute_positional_encoding: str | None = None, *args, **kwargs):
+        print(loss_function)
         super().__init__(*args, **kwargs)
         self.loss_function = getattr(Losses, loss_function)
         if absolute_positional_encoding:

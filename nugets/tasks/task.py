@@ -213,7 +213,7 @@ class Task():
         if config.multi_epoch_data_loader:
             data_loader = MultiEpochDataLoader
         else: data_loader = DataLoader
-        return data_loader(dataset, batch_size=batch_size, shuffle=which =="train", 
+        return data_loader(dataset, batch_size=batch_size, shuffle=which=="train", 
                           num_workers=config.num_workers if not no_workers else 0, 
                           pin_memory=not no_workers, 
                           persistent_workers=not no_workers, 

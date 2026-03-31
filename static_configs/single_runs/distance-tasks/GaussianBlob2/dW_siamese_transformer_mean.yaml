@@ -8,19 +8,20 @@ task:
     centers: 4
   ood_dataset: GaussianBlobs
   ood_config:
-    length: 80
-    min_points: 100
-    max_points: 150
+    length: 10
+    min_points: 150
+    max_points: 200
     centers: 4
 backbone:
   type: CoupledNetwork
   latent_dimension: 32
   p: 1
-  reconstruct_input: False
+  reconstruct_input: false
   decoder_distance: SinkhornLoss
-  use_siamese: False
-  encoder: 
-    type: Sumformer
+  use_siamese: true
+  aggregation: mean
+  encoder:
+    type: Transformer
     n_heads: 2
     n_layers: 2
     d_model: 128
@@ -28,9 +29,8 @@ backbone:
     feed_forward_hidden_dim: 128
   decoder:
     decoder_hidden_dim: 256
-    decoder_n_layers: 2
+    decoder_n_layers: 3
 batch_size: 128
-learning_rate: 1.e-4
-debug_mode: True
+learning_rate: 0.0001
+debug_mode: true
 loss_function: mse_loss
-aggregation: max

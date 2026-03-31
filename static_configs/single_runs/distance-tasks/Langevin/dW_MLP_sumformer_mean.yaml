@@ -1,0 +1,37 @@
+task:
+  type: FrechetDistanceTask
+  dataset: RandomTrajectory
+  dataset_config:
+    length: 100
+    min_points: 10
+    max_points: 20
+    type: Langevin
+    scaling: 10
+  ood_dataset: ModelNetPointset
+  ood_config:
+    name: '10'
+    size: 512
+    length: 200
+backbone:
+  type: CoupledNetwork
+  latent_dimension: 32
+  p: 1
+  reconstruct_input: false
+  decoder_distance: SinkhornLoss
+  use_siamese: false
+  aggregation: mean
+  encoder:
+    type: Sumformer
+    n_heads: 2
+    n_layers: 2
+    d_model: 128
+    key_dim: 512
+    feed_forward_hidden_dim: 128
+  decoder:
+    decoder_hidden_dim: 256
+    decoder_n_layers: 3
+batch_size: 128
+learning_rate: 0.0001
+debug_mode: true
+loss_function: mse_loss
+positional_encoding: SinusoidalAbsolutePositionalEncoding

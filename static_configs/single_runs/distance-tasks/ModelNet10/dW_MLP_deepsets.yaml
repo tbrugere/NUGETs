@@ -1,0 +1,29 @@
+task:
+  type: WassersteinDistanceTask
+  dataset: ModelNetPointset
+  dataset_config:
+    name: '10'
+    size: 256
+    length: 100
+  ood_dataset: ModelNetPointset
+  ood_config:
+    name: '10'
+    size: 512
+    length: 100
+backbone:
+  type: CoupledNetwork
+  latent_dimension: 32
+  p: 1
+  reconstruct_input: false
+  decoder_distance: SinkhornLoss
+  use_siamese: false
+  aggregation: sum
+  encoder:
+    type: SetNN
+    d_model: 64
+    embedding_layers: 2
+    embedding_hidden_dim: 128
+batch_size: 128
+learning_rate: 0.0001
+debug_mode: true
+loss_function: mse_loss
