@@ -37,7 +37,7 @@ class CoupledNetwork(BackBone):
     decoder_n_layers: int = int_hyperparameter(default=3, description="number of layers of the decoder MLP")
     decoder_n_points: int = int_hyperparameter(default=50, description="number of points output by the decoder")
 
-    latent_dimension: int = int_hyperparameter(description="dimension of the latent space, set it to 0 to disable latent")
+    latent_dimension: int = int_hyperparameter(description="dimension of the latent space, set it to 0 to disable latent. If enabled, the input point cloud will be first projected to a latent space of this dimension")
     p: int = int_hyperparameter(description="L_p distance function")
 
     use_siamese: bool = bool_hyperparameter(default=True, description="use Lp distance instead, not a final MLP")

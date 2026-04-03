@@ -38,8 +38,8 @@ class EpsilonKernelNetwork(BackBone):
     def forward(self, batch: Batch, return_reg_loss: bool=False):
         del return_reg_loss
 
-        out = self.set_encoder(batch)
-        out = softmax(src=out, index=out.batch)
+        out, _ = self.set_encoder(batch)
+        out = softmax(src=out.data, index=out.batch)
 
         # TODO: There should be a smarter/faster way to implement this approximation. Maybe with torch.einsum?
         coresets = []
@@ -56,7 +56,7 @@ class EpsilonKernelNetwork(BackBone):
         return output_ptset, None
     
     def get_input_dim(self):
-        self.set_encoder.get_input_dim()
+        return self.set_encoder.get_input_dim()
 
     def get_output_dim(self):
-        self.set_encoder.get_output_dim()
+        return self.set_encoder.get_output_dim()

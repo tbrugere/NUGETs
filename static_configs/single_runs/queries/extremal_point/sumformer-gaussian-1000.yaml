@@ -2,7 +2,7 @@ task:
   type: ExtremalPointRegressionTask
   dataset: GaussianBlobs
   dataset_config:
-    length: 500
+    length: 1000
     min_points: 50
     max_points: 100
   ood_dataset: GaussianBlobs

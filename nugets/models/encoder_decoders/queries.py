@@ -22,7 +22,7 @@ QueryBackboneResult: TypeAlias = Tensor | tuple[Batch|Tensor, Tensor]
 class QueryEncoderDecoder(EncoderDecoder):
 
     def __init__(self, input_dim: int, backbone_input_dim: int, backbone_output_dim: int, output_dim: int|None,
-                loss_function:str, absolute_positional_encoding: str | None = None, inject_noise: int = 0, *args, **kwargs):
+                loss_function:str, absolute_positional_encoding: str | None = None, inject_noise: float = 0.1, *args, **kwargs):
         assert backbone_output_dim == backbone_input_dim 
         super().__init__()
         self.in_proj = Linear(input_dim, backbone_input_dim)
@@ -45,7 +45,7 @@ class ApproximateQueryEncoderDecoder(EncoderDecoder):
     """
 
     def __init__(self, input_dim: int, backbone_input_dim: int, backbone_output_dim: int, output_dim: int|None,
-                loss_function:str, absolute_positional_encoding: str | None = None, inject_noise: int = 0, *args, **kwargs):
+                loss_function:str, absolute_positional_encoding: str | None = None, inject_noise: float = 0, *args, **kwargs):
         assert backbone_output_dim == backbone_input_dim 
         super().__init__()
         self.in_proj = Linear(input_dim, backbone_input_dim)
@@ -85,18 +85,6 @@ class SetToPointRegressionEncoderDecoder(QueryEncoderDecoder):
     def decode(self, result: QueryBackboneResult):
         """
         Return logits.
-        TODO: Add in more complex decoding process here. 
-        1. q \in \R^d, [x_1, \dots ,x_n] \in \R^(n x d)
-        2. change from projection to something else? 
-
-        1. Score points with normalized cosine similarity or normalized negative squared distance? 
-        1a. Make sure that logits do not explode. Negative squared distance may be smoother than just a 
-        raw dot product. 
-        1b. Yusu suggests: change to e^{-x}. Similarity vs. closeness, the network may have a hard time switching
-        from a similarity metric (such as dot product) to a closeness parameter. 
-        2. Add in a fixed temperature parameter to control softmax sharpness. 
-        3. The output from the backbone may also need to be normalized in general. This may help stabilize 
-        the training. At least normalize the query embedding. 
         """
 
         result_set = self.out_proj(result[0])

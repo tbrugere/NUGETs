@@ -49,4 +49,9 @@ class Performer(BackBone):
         for block in self.blocks:
             x_dense = block(x_dense, mask)
         x_nodes = x_dense[mask]
-        return Batch.from_batched(data = x_nodes, order=batch.order, n_nodes = batch.n_nodes, )
+        return Batch.from_batched(data = x_nodes, order=batch.order, n_nodes = batch.n_nodes, ), None
+    
+    def get_input_dim(self):
+        return self.d_model
+    def get_output_dim(self):
+        return self.d_model

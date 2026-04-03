@@ -68,7 +68,7 @@ class DistanceTask(Task):
         """Compute the distance between two sets"""
         raise NotImplementedError
 
-    def get_encoder_decoder(self, backbone, loss_function='mse_loss', **kwargs):
+    def get_encoder_decoder(self, backbone, loss_function='mse_loss',absolute_positional_encoding=None, **kwargs):
         """Get the encoder-decoder"""
         from nugets.models.encoder_decoders.distances import DistanceEncoderDecoder
         dataset_info = self.dataset_info()
@@ -88,7 +88,8 @@ class DistanceTask(Task):
                                       backbone_output_dim=backbone_output_dim, 
                                       same_input_proj=same_input_proj, 
                                       backbone_reconstructs=backbone_reconstructs,
-                                      loss_function=loss_function
+                                      loss_function=loss_function,
+                                      absolute_positional_encoding=absolute_positional_encoding
                                       )
 
     def datapoint_type(self):

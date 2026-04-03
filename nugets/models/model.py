@@ -117,6 +117,8 @@ class EncoderDecoderToVector(EncoderDecoder):
         self.backbone_output_dim = backbone_output_dim 
 
         self.aggregation = aggregation
+        if aggregation == 'none':
+            log.warn("no aggregation set, defaulting to mean")
     
     def decode(self, backbone_result: Any) -> Any:
         match self.aggregation:
@@ -127,7 +129,6 @@ class EncoderDecoderToVector(EncoderDecoder):
             case "max":
                 result = backbone_result.segment(reduce='max')
             case other:
-                log.warn("no aggregation set, defaulting to mean")
                 result = backbone_result.mean()
             
         return self.out_proj(result)

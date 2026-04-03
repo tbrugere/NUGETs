@@ -20,8 +20,9 @@ class SQUIDBoundaries(Dataset[Set_datapoint]):
 
     """
     datatype = Set_datapoint
+    length: int | None = None
 
-    def __init__(self, normalization=False, split_seed=42, which="train", **kwargs):
+    def __init__(self, normalization=False, split_seed=42, which="train", length=None, **kwargs):
         self.dim = 2
         # Retrieve from data folder
         inner = np.load('nugets/datasets/data/squid-data.npy')

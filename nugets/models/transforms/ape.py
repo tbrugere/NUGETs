@@ -26,13 +26,9 @@ class SinusoidalAbsolutePositionalEncoding(PositionalEncodingTransform):
             x: Tensor, shape ``[seq_len, batch_size, embedding_dim]``
         """ 
         # Per element in the batch, we need to add the positional encoding
-        # self.pe
+        # self.pe needs to be indexed based on the elements in the batch. 
         idx = batch.batch
         idx_range = torch.arange(len(idx)).type_as(batch.ptr)
-        offset = torch.ones_like(batch.ptr).type_as(batch.ptr)
-        offset[0] = 0
-        offset[1] = 0
-        ptr = batch.ptr - offset 
-        pe_index = (idx + idx_range) % (ptr[1:][idx])
+        pe_index = idx_range - batch.ptr[idx]
         return batch.data + self.pe[pe_index]
         

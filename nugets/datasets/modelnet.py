@@ -16,7 +16,9 @@ from nugets.datasets.register import register
 
 @register
 class ModelNet(Dataset[Graph_datapoint]):
-
+    """
+    ModelNet dataset, this version is the same as the version in PyTorch Geometric. 
+    """
     datatype = Graph_datapoint
 
     inner: Pyg_ModelNet|SplitTransform

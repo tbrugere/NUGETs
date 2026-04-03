@@ -9,10 +9,10 @@ from nugets.models.model import EncoderDecoderWithProjection, EncoderDecoderToVe
 import nugets.losses.losses as Losses
 from nugets.datasets.datapoint_types import LabeledSetBatch, LabeledSetDatapoint
 
+import sys
 
 class ShapefittingEncoder(EncoderDecoderToVector):
     def __init__(self, loss_function: str, absolute_positional_encoding: str | None = None, *args, **kwargs):
-        print(loss_function)
         super().__init__(*args, **kwargs)
         self.loss_function = getattr(Losses, loss_function)
         if absolute_positional_encoding:
@@ -46,9 +46,9 @@ class MEBEncoderDecoder(ShapefittingEncoder):
 class MEAEncoderDecoder(ShapefittingEncoder):
     """ Minimum Enclosing Annulus """
 
-    def __init__(self, loss_function: str, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.loss_function = getattr(Losses, loss_function)
+        # self.loss_function = getattr(Losses, loss_function)
 
     def compute_loss(self, 
                     batch: LabeledSetBatch,

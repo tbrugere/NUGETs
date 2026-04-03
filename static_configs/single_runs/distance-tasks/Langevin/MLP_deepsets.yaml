@@ -7,31 +7,28 @@ task:
     max_points: 20
     type: Langevin
     scaling: 10
-  ood_dataset: ModelNetPointset
+  ood_dataset: RandomTrajectory
   ood_config:
-    name: '10'
-    size: 512
-    length: 200
+    length: 10
+    min_points: 15
+    max_points: 25
+    type: Langevin
+    scaling: 10
 backbone:
   type: CoupledNetwork
   latent_dimension: 32
   p: 1
   reconstruct_input: false
   decoder_distance: SinkhornLoss
-  use_siamese: true
+  use_siamese: false
   aggregation: sum
   encoder:
-    type: Transformer
-    n_heads: 2
-    n_layers: 2
-    d_model: 128
-    key_dim: 512
-    feed_forward_hidden_dim: 128
-  decoder:
-    decoder_hidden_dim: 256
-    decoder_n_layers: 3
+    type: SetNN
+    d_model: 64
+    embedding_layers: 2
+    embedding_hidden_dim: 128
+  positional_encoding: SinusoidalAbsolutePositionalEncoding
 batch_size: 128
 learning_rate: 0.0001
 debug_mode: true
 loss_function: mse_loss
-positional_encoding: SinusoidalAbsolutePositionalEncoding

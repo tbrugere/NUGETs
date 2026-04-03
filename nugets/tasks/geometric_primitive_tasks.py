@@ -73,7 +73,6 @@ class SetToPointRegressionTask(Task):
         backbone_output_dim = backbone.get_output_dim()
         input_dim = dataset_info["dim"]
         output_dim = backbone_output_dim
-        output_dim = input_dim
         return SetToPointRegressionEncoderDecoder(input_dim=input_dim, 
                                                  backbone_input_dim=backbone_input_dim, 
                                                  backbone_output_dim=backbone_output_dim, 

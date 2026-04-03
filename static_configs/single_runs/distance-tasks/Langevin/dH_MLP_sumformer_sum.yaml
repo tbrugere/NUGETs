@@ -7,11 +7,13 @@ task:
     max_points: 20
     type: Langevin
     scaling: 10
-  ood_dataset: ModelNetPointset
+  ood_dataset: RandomTrajectory
   ood_config:
-    name: '10'
-    size: 512
-    length: 200
+    length: 10
+    min_points: 15
+    max_points: 25
+    type: Langevin
+    scaling: 10
 backbone:
   type: CoupledNetwork
   latent_dimension: 32
@@ -30,6 +32,7 @@ backbone:
   decoder:
     decoder_hidden_dim: 256
     decoder_n_layers: 3
+  positional_encoding: SinusoidalAbsolutePositionalEncoding
 batch_size: 128
 learning_rate: 0.0001
 debug_mode: true

@@ -22,11 +22,9 @@ backbone:
   aggregation: max
   encoder:
     type: SetNN
-    n_heads: 2
-    n_layers: 2
-    d_model: 128
-    key_dim: 512
-    feed_forward_hidden_dim: 128
+    d_model: 64
+    embedding_layers: 2
+    embedding_hidden_dim: 128
   decoder:
     decoder_hidden_dim: 256
     decoder_n_layers: 3

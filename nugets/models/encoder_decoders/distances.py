@@ -42,10 +42,11 @@ class DistanceEncoderDecoder(EncoderDecoder):
         self.loss_function = getattr(Losses, loss_function)
 
         # set positional encoding here
+        # This works as long as we are working with in1==in2
         if absolute_positional_encoding:
             from nugets.models.transforms import get_transform_register
             transform_register = get_transform_register()
-            dim = self.input_dim
+            dim = in1
             absolute_positional_encoding = transform_register[absolute_positional_encoding](d_model=dim)
         self.absolute_positional_encoding = absolute_positional_encoding
 
@@ -53,7 +54,9 @@ class DistanceEncoderDecoder(EncoderDecoder):
         if self.absolute_positional_encoding: 
             batch.set1.data = self.absolute_positional_encoding(batch.set1)
             batch.set2.data = self.absolute_positional_encoding(batch.set2)
-        return (self.in_proj1(batch.set1), self.in_proj2(batch.set2)), None
+        v1 = self.in_proj1(batch.set1)
+        v2 = self.in_proj2(batch.set2)
+        return (v1, v2), None
 
     def decode(self, result: DistanceBackboneResult):
         if isinstance(result, tuple):
