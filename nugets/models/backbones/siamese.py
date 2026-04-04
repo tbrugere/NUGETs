@@ -12,6 +12,7 @@ from nugets.models.backbones.register import register
 import nugets.losses.losses as Losses
 
 from torch_geometric.nn.resolver import aggregation_resolver
+from torch_geometric.utils import scatter
 
 @register
 class CoupledNetwork(BackBone):
@@ -107,8 +108,10 @@ class CoupledNetwork(BackBone):
                 agg1 = v1.sum()
                 agg2 = v2.sum()
             case 'max':
-                agg1 = v1.segment(reduce='max')
-                agg2 = v2.segment(reduce='max')
+                # agg1 = v1.segment(reduce='max')
+                # agg2 = v2.segment(reduce='max')
+                agg1 = scatter(v1.data, v1.batch, reduce='max')
+                agg2 = scatter(v2.data, v2.batch, reduce='max')
             case other: 
                 agg1 = v1.mean()
                 agg2 = v2.mean()

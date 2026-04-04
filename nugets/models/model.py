@@ -29,6 +29,7 @@ from ml_lib.datasets.datapoint import Datapoint
 import lightning as pl
 import torch
 from torch import nn
+from torch_geometric.utils import scatter
 
 from nugets.pipeline.configs import Config, ModelConf, TaskConf, BackboneConf
 
@@ -127,7 +128,8 @@ class EncoderDecoderToVector(EncoderDecoder):
             case "sum":
                 result = backbone_result.sum()
             case "max":
-                result = backbone_result.segment(reduce='max')
+                # result = backbone_result.segment(reduce='max')
+                result = scatter(backbone_result.data, backbone_result.batch, reduce='max')
             case other:
                 result = backbone_result.mean()
             
