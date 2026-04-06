@@ -1,8 +1,8 @@
 task:
-  type: ExtremalPointRegressionTask
+  type: ApproximateNearestNeighborTask
   dataset: GaussianBlobs
   dataset_config:
-    length: 500
+    length: 1000
     min_points: 50
     max_points: 100
   ood_dataset: GaussianBlobs
@@ -13,7 +13,7 @@ task:
 backbone:
   type: QueryNetwork
   encoder: 
-    type: Sumformer
+    type: Transformer
     n_heads: 2
     n_layers: 3
     d_model: 64

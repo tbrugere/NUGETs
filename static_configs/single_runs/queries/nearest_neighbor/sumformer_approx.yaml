@@ -1,5 +1,5 @@
 task:
-  type: ExtremalPointRegressionTask
+  type: ApproximateNearestNeighborTask
   dataset: GaussianBlobs
   dataset_config:
     length: 500

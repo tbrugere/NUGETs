@@ -21,7 +21,7 @@ backbone:
   reconstruct_input: false
   decoder_distance: SinkhornLoss
   use_siamese: false
-  aggregation: sum
+  aggregation: mean
   encoder:
     type: Sumformer
     n_heads: 2
@@ -37,4 +37,3 @@ batch_size: 128
 learning_rate: 0.0001
 debug_mode: true
 loss_function: mse_loss
-positional_encoding: SinusoidalAbsolutePositionalEncoding

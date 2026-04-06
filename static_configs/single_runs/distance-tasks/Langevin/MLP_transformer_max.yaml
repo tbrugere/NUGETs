@@ -29,12 +29,8 @@ backbone:
     d_model: 128
     key_dim: 512
     feed_forward_hidden_dim: 128
-  decoder:
-    decoder_hidden_dim: 256
-    decoder_n_layers: 3
   positional_encoding: SinusoidalAbsolutePositionalEncoding
 batch_size: 128
 learning_rate: 0.0001
 debug_mode: true
 loss_function: mse_loss
-positional_encoding: SinusoidalAbsolutePositionalEncoding

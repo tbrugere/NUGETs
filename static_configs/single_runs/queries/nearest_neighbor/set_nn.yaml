@@ -1,8 +1,8 @@
 task:
-  type: ExtremalPointRegressionTask
+  type: NearestNeighborRegressionTask
   dataset: GaussianBlobs
   dataset_config:
-    length: 500
+    length: 1000
     min_points: 50
     max_points: 100
   ood_dataset: GaussianBlobs
@@ -13,11 +13,11 @@ task:
 backbone:
   type: QueryNetwork
   encoder: 
-    type: Sumformer
+    type: SetNN
     n_heads: 2
     n_layers: 3
     d_model: 64
-    feed_forward_hidden_dim: 128
+batch_size: 64
 batch_size: 64
 learning_rate: 1.e-4
 debug_mode: True
