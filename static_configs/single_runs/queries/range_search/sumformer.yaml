@@ -24,4 +24,4 @@ batch_size: 16
 learning_rate: 1.e-4
 debug_mode: True
 loss_function: binary_cross_entropy_with_logits
-# aggregation: mean
+aggregation: mean

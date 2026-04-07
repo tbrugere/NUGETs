@@ -1,8 +1,12 @@
 task:
-  type: ConvexHullMembershipTask
-  dataset: SQUIDBoundaries
+  type: AlphaShape2MembershipTask
+  dataset: GaussianBlobs
   dataset_config:
-    normalization: True
+    length: 3000
+    min_points: 50
+    max_points: 100
+    centers: 4
+    dim: 2
   ood_dataset: GaussianBlobs
   ood_config:
     length: 300
@@ -18,4 +22,4 @@ backbone:
   feed_forward_hidden_dim: 64
 batch_size: 32
 learning_rate: 1.e-4
-loss_function: scatter_binary_cross_entropy
+loss_function: scatter_binary_focal_loss

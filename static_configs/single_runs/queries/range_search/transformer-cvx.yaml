@@ -1,12 +1,12 @@
 task:
   type: RangeQueryTask
-  dataset: RandomPolygons
+  dataset: RandomConvexPolygons
   dataset_config:
     length: 3000
     min_points: 5
     max_points: 8
     scaling: 5
-  ood_dataset: RandomPolygons
+  ood_dataset: RandomConvexPolygons
   ood_config:
     length: 100
     min_points: 5
