@@ -130,6 +130,7 @@ def get_mean_relative_error(model, **kwargs):
         pred = model(batch).detach().numpy()
         distances = batch.distance.numpy()
         avg_relative_error = np.abs(pred - distances)/(distances + 1e-5)
+
     return {'avg_re': np.mean(avg_relative_error),'std': np.std(avg_relative_error)}, pred
 
 parser = argparse.ArgumentParser()
@@ -147,10 +148,12 @@ for i in trange(len(yaml_files)):
     
     model = Model.from_config_file(Path(cfg_file))
     dirname = model.get_dirname()
-    ckpt_dir = f'workdir/server-workdir-0406/models/{dirname}'
-    if not Path(ckpt_dir).exists() or not any(Path(ckpt_dir).glob('*.ckpt')):
+    ckpt_dir = f'workdir/models/{dirname}'
+    if not Path(ckpt_dir).exists() or not any(Path(ckpt_dir).glob('*.ckpt')) :
         print("Experiment not finished:", cfg_file)
         continue
+    print(ckpt_dir, '\n')
+    print('checkpoint in', dirname)
     latest_ckpt = max(Path(ckpt_dir).glob("*.ckpt"), key=last_version)
     ckpt = torch.load(f'{latest_ckpt}')
     model.load_state_dict(ckpt['state_dict'])
@@ -181,6 +184,7 @@ results = {}
 for i in trange(len(all_models)):
         name = yaml_files[i].name[:-5]
         model = all_models[i]
+        
         name = modelnames[i]
         metrics, pred = test_metrics(model, ranking_func=ranking_func)
         print(name, metrics)
