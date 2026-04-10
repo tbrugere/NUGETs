@@ -89,11 +89,11 @@ class SetToPointRegressionEncoderDecoder(QueryEncoderDecoder):
 
         result_set = self.out_proj(result[0])
         result_query = self.out_proj(result[1])
-        result_norm = norm(result_query, ord=2, dim=0)
-        normalized_query = result_query/result_norm
+        # result_norm = norm(result_query, ord=2, dim=0)
+        # normalized_query = result_query/result_norm
 
         idx = result_set.batch
-        res = result_set * normalized_query[idx]
+        res = result_set * result_query[idx]
         logits = res.data.sum(axis=1)
         return logits
 

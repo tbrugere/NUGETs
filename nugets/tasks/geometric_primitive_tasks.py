@@ -98,7 +98,7 @@ class ApproximateQueryRegressionTask(Task):
     def label(self, pointset):
         raise NotImplementedError
 
-    def compute_metrics(self, pointset):
+    def compute_metrics(self, datapoint, results):
         raise NotImplementedError
     
     def get_encoder_decoder(self,  backbone: BackBone, loss_function: str, **kwargs):
@@ -129,6 +129,12 @@ class ApproximateExtremalPointTask(ApproximateQueryRegressionTask):
         label = pointset[idx]
         return pointset, torch.tensor(label).float(), torch.tensor(direction).type_as(pointset)
 
+    def compute_metrics(self, datapoint, results):
+        gt = datapoint.label
+        center_diff = torch.norm(gt - results, dim=1)
+        center_diff_mean = center_diff.mean()
+        return dict(center_difference = center_diff_mean)
+
 @register
 class ApproximateNearestNeighborTask(ApproximateQueryRegressionTask):
     seed: int = 42
@@ -145,6 +151,11 @@ class ApproximateNearestNeighborTask(ApproximateQueryRegressionTask):
         nn_idx = indices[0][0]
         return torch.tensor(modified_pointset), torch.tensor(raw_pointcloud[nn_idx]).float(), pointset[q_idx]
 
+    def compute_metrics(self, datapoint, results):
+        gt = datapoint.label
+        center_diff = torch.norm(gt - results, dim=1)
+        center_diff_mean = center_diff.mean()
+        return dict(center_difference = center_diff_mean)
 
 @register
 class NearestNeighborRegressionTask(SetToPointRegressionTask):
