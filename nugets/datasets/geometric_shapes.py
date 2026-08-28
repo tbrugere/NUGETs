@@ -90,7 +90,11 @@ class GaussianBlobs(GeneratedDataset[Set_datapoint]):
     
     def generate_item(self, rng):
         unit_sample = self.center_sampler.random(n=self.centers)
-        sample_means = qmc.scale(unit_sample, [-self.bound, -self.bound], [self.bound, self.bound])
+        sample_means = qmc.scale(
+            unit_sample,
+            [-self.bound] * self.dim,
+            [self.bound] * self.dim,
+        )
 
         n_points = rng.integers(self.min_points, self.max_points)
         cuts = np.random.choice(np.arange(1, n_points), self.centers - 1, replace=False)

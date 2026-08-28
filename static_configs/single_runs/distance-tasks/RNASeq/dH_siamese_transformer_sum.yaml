@@ -1,17 +1,13 @@
 task:
   type: HausdorffDistanceTask
-  dataset: GaussianBlobs
+  dataset: RNASeqPointCloud
   dataset_config:
     length: 100
-    min_points: 50
-    max_points: 100
-    centers: 4
-  ood_dataset: GaussianBlobs
+    size: 100
+  ood_dataset: RNASeqPointCloud
   ood_config:
     length: 10
-    min_points: 150
-    max_points: 200
-    centers: 4
+    size: 200
 backbone:
   type: CoupledNetwork
   latent_dimension: 32
@@ -19,12 +15,14 @@ backbone:
   reconstruct_input: false
   decoder_distance: SinkhornLoss
   use_siamese: true
-  aggregation: max
+  aggregation: sum
   encoder:
-    type: SetNN
-    d_model: 64
-    embedding_layers: 2
-    embedding_hidden_dim: 128
+    type: Transformer
+    n_heads: 2
+    n_layers: 2
+    d_model: 128
+    key_dim: 512
+    feed_forward_hidden_dim: 128
   decoder:
     decoder_hidden_dim: 256
     decoder_n_layers: 3

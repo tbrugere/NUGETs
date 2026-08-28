@@ -18,7 +18,7 @@ backbone:
   p: 1
   reconstruct_input: false
   decoder_distance: SinkhornLoss
-  use_siamese: false
+  use_siamese: true
   aggregation: sum
   encoder:
     type: SetNN

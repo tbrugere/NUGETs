@@ -11,6 +11,7 @@ from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_sc
 import re
 from torch_geometric.utils import softmax, unbatch
 import json 
+import csv
 
 def last_version(path: Path) -> int:
     m = re.fullmatch(r"last(?:-v(\d+))?\.ckpt", path.name)
@@ -160,6 +161,7 @@ for i in trange(len(yaml_files)):
     model.batch_size = 100000
     modelnames.append(cfg_file.name[:-5])
     all_models.append(model)
+
 ranking_func = None
 match args.task_type:
     case 'distances':
@@ -180,17 +182,53 @@ match args.task_type:
 cfg_pth = Path('config.yaml')
 Config.load(cfg_pth)
 config = Config.get()
-results = {}
-for i in trange(len(all_models)):
-        name = yaml_files[i].name[:-5]
-        model = all_models[i]
-        
-        name = modelnames[i]
-        metrics, pred = test_metrics(model, ranking_func=ranking_func)
-        print(name, metrics)
-        results[name]{'metrics': pred, 'output': pred}
+results = []
 
-with open(f'workdir/results/{args.output_file}', 'w') as f:
-    json.dump(results, f)
+for name, model in tqdm(
+    zip(modelnames, all_models),
+    total=len(all_models),
+):
+    model.eval()
+
+    with torch.no_grad():
+        metrics, _ = test_metrics(model, ranking_func=ranking_func)
+
+    row = {"model": name}
+
+    for metric_name, value in metrics.items():
+        if isinstance(value, np.generic):
+            value = value.item()
+        elif torch.is_tensor(value):
+            value = value.detach().cpu().item()
+        elif isinstance(value, tuple):
+            value = json.dumps(
+                [
+                    item.item() if isinstance(item, np.generic) else item
+                    for item in value
+                ]
+            )
+
+        row[metric_name] = value
+
+    print(name, metrics)
+    results.append(row)
+
+output_path = Path("workdir/results") / args.output_file
+output_path.parent.mkdir(parents=True, exist_ok=True)
+
+if results:
+    fieldnames = sorted(
+        {key for result in results for key in result.keys()},
+        key=lambda key: (key != "model", key),
+    )
+
+    with output_path.open("w", newline="") as output_stream:
+        writer = csv.DictWriter(output_stream, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(results)
+
+    print(f"Wrote {len(results)} results to {output_path}")
+else:
+    print("No trained model checkpoints were found.")
         
     
