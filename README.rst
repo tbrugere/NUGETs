@@ -9,7 +9,7 @@ This is a machine learning benchmark for geometric problems.
 
 Chores
 =======
-1. Dependency clean-up and streamline installation
+1. Clean CGAL dependencies
 2. Add relative positional encodings
 3. Add in graph learning utilities
 
@@ -36,6 +36,8 @@ It will automatically create a virtual environment in ``.venv``, which you can t
 .. code-block:: console
 
    $ source .venv/bin/activate
+
+** Note: Currently this uv setup will work on Linux x86_64 machines. If you are using aarch64, a conda requirements file (coming soon) will be easier for you to use **
 
 You may need the Computational Geometry Algorithms Library (CGAL) in order to use this benchmark fully. Follow the installation directions on their documentation. You may need the following additional step (I did): 
 
