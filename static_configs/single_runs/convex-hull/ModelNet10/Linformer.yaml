@@ -1,0 +1,23 @@
+task:
+  type: ConvexHullMembershipTask
+  dataset: ModelNetPointset
+  dataset_config:
+    name: '10'
+    size: 256
+    length: 1000
+  ood_dataset: ModelNetPointset
+  ood_config:
+    name: '10'
+    size: 512
+    length: 300
+backbone:
+  type: Linformer
+  n_heads: 1
+  n_layers: 3
+  d_model: 16
+  max_seq_len: 512
+  projection_dim: 32
+  feed_forward_hidden_dim: 64
+batch_size: 32
+learning_rate: 1.e-4
+loss_function: scatter_binary_focal_loss

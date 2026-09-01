@@ -3,12 +3,14 @@ task:
   dataset: GaussianBlobs
   dataset_config:
     length: 100
+    dim: 2
     min_points: 50
     max_points: 100
     centers: 4
   ood_dataset: GaussianBlobs
   ood_config:
     length: 10
+    dim: 2
     min_points: 150
     max_points: 200
     centers: 4

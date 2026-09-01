@@ -1,0 +1,26 @@
+task:
+  type: ExtremalPointRegressionTask
+  dataset: RNASeqPointCloud
+  dataset_config:
+    length: 1000
+    size: 100
+  ood_dataset: RNASeqPointCloud
+  ood_config:
+    length: 10
+    size: 200
+backbone:
+  type: QueryNetwork
+  encoder:
+    type: Linformer
+    n_heads: 2
+    n_layers: 3
+    d_model: 64
+    max_seq_len: 200
+    projection_dim: 32
+    feed_forward_hidden_dim: 128
+batch_size: 64
+learning_rate: 1.e-4
+debug_mode: True
+loss_function: mse_loss
+
+

@@ -1,0 +1,30 @@
+task:
+  type: HausdorffDistanceTask
+  dataset: NZDEM
+  dataset_config:
+    n_points: 100
+  ood_dataset: NZDEM
+  ood_config:
+    n_points: 200
+backbone:
+  type: CoupledNetwork
+  latent_dimension: 32
+  p: 1
+  reconstruct_input: false
+  decoder_distance: SinkhornLoss
+  use_siamese: true
+  aggregation: sum
+  encoder:
+    type: Transformer
+    n_heads: 2
+    n_layers: 2
+    d_model: 128
+    key_dim: 512
+    feed_forward_hidden_dim: 128
+  decoder:
+    decoder_hidden_dim: 256
+    decoder_n_layers: 3
+batch_size: 128
+learning_rate: 0.0001
+debug_mode: true
+loss_function: mse_loss

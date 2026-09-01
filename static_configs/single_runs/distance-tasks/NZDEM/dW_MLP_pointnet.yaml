@@ -1,0 +1,28 @@
+task:
+  type: WassersteinDistanceTask
+  dataset: NZDEM
+  dataset_config:
+    n_points: 100
+  ood_dataset: NZDEM
+  ood_config:
+    n_points: 200
+backbone:
+  type: CoupledNetwork
+  latent_dimension: 32
+  p: 1
+  reconstruct_input: false
+  decoder_distance: SinkhornLoss
+  use_siamese: false
+  aggregation: max
+  encoder:
+    type: SetNN
+    d_model: 64
+    embedding_layers: 2
+    embedding_hidden_dim: 128
+  decoder:
+    decoder_hidden_dim: 256
+    decoder_n_layers: 3
+batch_size: 128
+learning_rate: 0.0001
+debug_mode: true
+loss_function: mse_loss

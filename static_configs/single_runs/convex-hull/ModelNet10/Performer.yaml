@@ -4,10 +4,12 @@ task:
   dataset_config:
     name: '10'
     size: 256
+    length: 1000
   ood_dataset: ModelNetPointset
-  dataset_config:
+  ood_config:
     name: '10'
     size: 512
+    length: 300
 backbone:
   type: Performer
   n_heads: 1
