@@ -11,6 +11,7 @@ from nugets.datasets.register import register as dataset_register
 import numpy as np
 import torch
 
+# TODO: Raw RNAseq dataset does not download to correct place. Should be workdir/datasets/raw/
 
 @dataset_register
 class RNASeqPointCloud(Dataset[Set_datapoint]):

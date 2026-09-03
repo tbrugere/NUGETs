@@ -32,6 +32,7 @@ class NZDEM(Dataset[Set_datapoint]):
 
     def __init__(self, n_points: int = 100, which="train", **kwargs):
         super().__init__(**kwargs)
+        self.dim = 3  # dimension of NZDem file. 
         self.n_points = n_points
         # Locations for all relevant parts of the dataset
         root_dir = Path("workdir/datasets/raw/nz_dem")
@@ -67,6 +68,7 @@ class NZDEM(Dataset[Set_datapoint]):
             inner = split_transform(inner)
         inner = inner - inner.mean(dim=0, keepdim=True) # center dataset
         self.inner = torch.tensor(inner, dtype=torch.float32)
+        
 
     def prepare(self, tif_file_path):
         """
