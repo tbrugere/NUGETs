@@ -29,24 +29,25 @@ class NZDEM(Dataset[Set_datapoint]):
     point_clouds_per_terrain: int = 100
     sampling: str = "random" # This is an additional parameter that can change
     split_seed: int = 42 # split for test/train split
-
-    def __init__(self, n_points: int = 100, which="train", **kwargs):
+    total_n_points: int = 1000
+    def __init__(self, n_points: int = 100, seed=42, which="train", **kwargs):
         super().__init__(**kwargs)
         self.dim = 3  # dimension of NZDem file. 
         self.n_points = n_points
+        self.seed = seed
         # Locations for all relevant parts of the dataset
         root_dir = Path("workdir/datasets/raw/nz_dem")
         if not root_dir.exists():
             print("Downloading and saving raw terrain data in ", root_dir)
             root_dir.mkdir(exist_ok=True, parents=True)
-        raw_dataset_pth = root_dir / 'nz_dem_pointcloud' / ('per_sample=' + str(n_points) + '.npz') # Where the cleaned data will live
+        raw_dataset_pth = root_dir / 'nz_dem_pointcloud' / ('per_sample=' + str(self.total_n_points) + '.npz') # Where the cleaned data will live
         raw_dataset_pth.parent.mkdir(exist_ok=True, parents=True)
         zip_file_pth = root_dir / 'nzdem-may-2020.zip' # where zip file will be saved
         tif_file_pth = root_dir / 'tifs' # where tif files are extracted to
 
         if raw_dataset_pth.exists():
             raw_data = np.load(raw_dataset_pth)
-            inner = raw_data['pointsets']
+            raw_inner = raw_data['pointsets']
         else: 
             download_from_url(self.url, zip_file_pth) # Download original zip from url
             extract_data_from_zip(zip_file_pth, root_dir / 'nzdem-zip') # Extract zip files from the dataset
@@ -56,16 +57,31 @@ class NZDEM(Dataset[Set_datapoint]):
             dataset, labels = self.prepare(tif_file_pth)
             np.savez(raw_dataset_pth, pointsets=dataset, labels=labels)
             print("cached dataset in:", raw_dataset_pth)
-            inner = np.array(dataset)
+            raw_inner = np.array(dataset)
         
         if which == "ood": 
             which = "val"
         is_train_or_val = which in ("train", "val") 
-        if is_train_or_val:
-            split_transform: SplitTransform = SplitTransform(
-                    which=which, seed=self.split_seed,
-                    splits=["train", "val"], percents=[.9, .1])
-            inner = split_transform(inner)
+        num_sample = n_points
+
+        indices = np.array([
+            np.random.choice(self.total_n_points, num_sample, replace=False, seed=self.seed)
+            for _ in range(len(raw_inner))
+        ])
+
+        inner = np.take_along_axis(raw_inner, indices[:, :, None], axis=1)
+        rng = np.random.default_rng(self.seed)
+        train_split_num = int(0.9 * len(raw_inner))
+        train_split = rng.integers(0, high=len(raw_inner), size= train_split_num, replace=False)
+        test_split = [idx for idx in range(len(raw_inner)) if idx not in train_split]
+        if which == "train":    
+            inner = inner[train_split]
+        else:
+            inner = inner[test_split]
+            # split_transform: SplitTransform = SplitTransform(
+            #         which=which, seed=self.split_seed,
+            #         splits=["train", "val"], percents=[.9, .1])
+            # inner = split_transform(inner)
         inner = inner - inner.mean(dim=0, keepdim=True) # center dataset
         self.inner = torch.tensor(inner, dtype=torch.float32)
         
@@ -108,7 +124,7 @@ class NZDEM(Dataset[Set_datapoint]):
                         window_mask = mask[y0:y1 + 1, x0:x1 + 1]
                         valid_indices = np.flatnonzero(~window_mask)
                     chosen = rng.choice(valid_indices,
-                                        size=self.n_points,
+                                        size=self.total_n_points,
                                         replace=True)
                     local_rows, local_cols = np.unravel_index(chosen, window_mask.shape)
                     sampled_rows = local_rows + y0
