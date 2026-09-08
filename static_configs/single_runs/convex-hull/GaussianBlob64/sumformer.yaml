@@ -22,4 +22,4 @@ backbone:
   feed_forward_hidden_dim: 64
 batch_size: 32
 learning_rate: 1.e-4
-loss_function: scatter_binary_focal_loss+
+loss_function: scatter_binary_focal_loss

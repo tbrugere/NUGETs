@@ -1,5 +1,5 @@
 task:
-  type: ConvexHullMembershipTask
+  type: EpsilonKernelTask
   dataset: GaussianBlobs
   dataset_config:
     length: 3000
@@ -15,11 +15,15 @@ task:
     centers: 4
     dim: 2
 backbone:
-  type: Transformer
-  n_heads: 1
-  n_layers: 3
-  d_model: 16
-  feed_forward_hidden_dim: 64
-batch_size: 32
+  type: EpsilonKernelNetwork
+  encoder:
+    type: Sumformer
+    n_heads: 2
+    n_layers: 2
+    d_model: 2
+    key_dim: 512
+    feed_forward_hidden_dim: 128
+batch_size: 128
 learning_rate: 1.e-4
-loss_function: scatter_binary_focal_loss
+loss_function: directional_width_loss
+aggregation: mean
