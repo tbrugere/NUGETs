@@ -27,30 +27,22 @@ class RNASeqPointCloud(Dataset[Set_datapoint]):
     _HF_REPO_ID = "geometricdataset/Neural-CG-Benchmark"
     _HF_PREFIX = "server-local"
 
-    def _auto_download(self, dest: str | Path | None = None) -> None:
+    def _auto_download(self, dest: str | Path ) -> None:
         try:
-            from huggingface_hub import snapshot_download
+            from huggingface_hub import hf_hub_download
         except ImportError as exc:
             raise ImportError(
                 "huggingface_hub is required for automatic dataset downloads."
             ) from exc
+        if isinstance(dest, str):
+            dest = Path(dest)
+        dest.parent.mkdir(parents=True, exist_ok=True)
 
-        if dest is not None:
-            download_dest = Path(dest)
-        else:
-            parts = self.root.parts
-            if self._HF_PREFIX in parts:
-                idx = parts.index(self._HF_PREFIX)
-                download_dest = Path(".") if idx == 0 else Path(*parts[:idx])
-            else:
-                download_dest = Path("data")
-
-        snapshot_download(
+        hf_hub_download(
             repo_id=self._HF_REPO_ID,
             repo_type="dataset",
-            allow_patterns=[f"{self._HF_PREFIX}/rna.npy"],
+            filename=f'{self._HF_PREFIX}/rna.npy'
             local_dir=str(download_dest),
-            local_dir_use_symlinks=False,
         )
         
     
@@ -58,7 +50,7 @@ class RNASeqPointCloud(Dataset[Set_datapoint]):
                  auto_download:bool = True, **kwargs):
         
         self.root = Path(f'{self.default_root}/raw/rna.npy')
-        if not self.root.exists() and auto_download:
+        if not self.root.is_file() and auto_download:
             self._auto_download(self.root)
         elif not self.root.exists() and not auto_download:
             raise FileNotFoundError(f'RNAseq data not found in {self.root}. Please download from https://huggingface.co/datasets/geometricdatasets/Neural-CG-Benchmark')
