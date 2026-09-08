@@ -126,13 +126,17 @@ def get_mean_relative_error(model, **kwargs):
     """
     Get average relative error for distances
     """
+    all_relative_err = []
     test = model.test_dataloader()
     for batch in test:
         pred = model(batch).detach().numpy()
         distances = batch.distance.numpy()
         avg_relative_error = np.abs(pred - distances)/(distances + 1e-5)
+        all_relative_err.append(avg_relative_error)
+    all_relative_err = np.concatenate(all_relative_err)
 
-    return {'avg_re': np.mean(avg_relative_error),'std': np.std(avg_relative_error)}, pred
+    return {'avg_re': np.mean(all_relative_err),
+            'std': np.std(all_relative_err)}, pred
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--yaml-dir", type=str)
