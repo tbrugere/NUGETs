@@ -17,12 +17,12 @@ class EpsilonKernelIdentityEncoderDecoder(EncoderDecoder):
         self.loss_function = getattr(Losses, loss_function)
         self.input_dim = input_dim
     
-    def encoder(self, batch: Set_batch):
-        return batch, None
+    def encode(self, batch: Set_batch):
+        return batch.pointset, None
     
-    def decode(self, result: Set_batch):
+    def decode(self, result: Batch):
         return result
     
-    def compute_result(self, batch: Set_batch, backbone_result: Set_batch, encoder_info):
+    def compute_loss(self, batch: Set_batch, backbone_result: Batch, encoder_info):
         eps_kernel = self.decode(backbone_result)
-        return self.loss_function(predicted=eps_kernel, target=batch, in_dim=self.input_dim)
+        return self.loss_function(predicted=eps_kernel, target=batch.pointset, in_dim=self.input_dim)

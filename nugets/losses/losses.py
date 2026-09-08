@@ -77,18 +77,18 @@ def directional_width_loss(predicted, target, in_dim,n=100, **kwargs):
     Measures difference in directional width. 
     See https://users.cs.duke.edu/~pankaj/publications/surveys/coreset-survey.pdf for more information. 
     """
-    uniform_sphere_dist = uniform_direction.rvs(dim=in_dim)
-    directions = torch.tensor(uniform_sphere_dist.rvs(n=100), dtype=torch.float32)
+    uniform_sphere_dist = uniform_direction(dim=in_dim)
+    directions = torch.tensor(uniform_sphere_dist.rvs(100), dtype=torch.float32, device=target.data.device)
     
-    proj_predicted = torch.matmul(predicted, directions)
-    proj_target = torch.matmul(target, directions)
+    proj_predicted = torch.matmul(predicted.data, directions.T)
+    proj_target = torch.matmul(target.data, directions.T)
 
 
-    max_p = scatter(x = proj_predicted.data, batch = proj_predicted.batch1, reduce='max') #add batch indicator manually
-    max_q = scatter(x = proj_target.data, batch = proj_target.batch1, reduce='max')
+    max_p = scatter(src= proj_predicted, index = predicted.batch1, reduce='max', dim=0) #add batch indicator manually
+    max_q = scatter(src= proj_target, index = target.batch1, reduce='max', dim=0)
 
-    min_p = -1 * scatter(x = -1 * proj_predicted.data, batch = proj_predicted.batch1, reduce='max')
-    min_q = -1 * scatter(x = -1 * proj_target.data, batch = proj_target.batch1, reduce='max')
+    min_p = -1 * scatter(src = -1 * proj_predicted, index = predicted.batch1, reduce='max', dim=0)
+    min_q = -1 * scatter(src = -1 * proj_target, index = target.batch1, reduce='max', dim=0)
 
     diff_max = torch.abs(max_q - max_p)
     diff_min = torch.abs(min_q - min_p)
