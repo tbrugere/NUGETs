@@ -41,15 +41,15 @@ class RNASeqPointCloud(Dataset[Set_datapoint]):
         hf_hub_download(
             repo_id=self._HF_REPO_ID,
             repo_type="dataset",
-            filename=f'{self._HF_PREFIX}/rna.npy'
-            local_dir=str(download_dest),
+            filename=f'{self._HF_PREFIX}/rna.npy',
+            local_dir=str(dest),
         )
         
     
     def __init__(self, length=100, size=100, which="train", seed=42, 
                  auto_download:bool = True, **kwargs):
         
-        self.root = Path(f'{self.default_root}/raw/rna.npy')
+        self.root = Path(f'{self.default_root}/raw/')
         if not self.root.is_file() and auto_download:
             self._auto_download(self.root)
         elif not self.root.exists() and not auto_download:
