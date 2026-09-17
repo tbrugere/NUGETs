@@ -22,7 +22,7 @@ class RNASeqPointCloud(Dataset[Set_datapoint]):
     seed: int = 42 # random seed set for sampling point clouds. 
     length: int | None = None
     split_seed: int = 42
-    default_root = 'workdir/datasets'
+    default_raw_data_dir = 'workdir/datasets/raw/server-local'
 
     _HF_REPO_ID = "geometricdataset/Neural-CG-Benchmark"
     _HF_PREFIX = "server-local"
@@ -49,13 +49,13 @@ class RNASeqPointCloud(Dataset[Set_datapoint]):
     def __init__(self, length=100, size=100, which="train", seed=42, 
                  auto_download:bool = True, **kwargs):
         
-        self.root = Path(f'{self.default_root}/raw/')
-        if not self.root.is_file() and auto_download:
-            self._auto_download(self.root)
-        elif not self.root.exists() and not auto_download:
-            raise FileNotFoundError(f'RNAseq data not found in {self.root}. Please download from https://huggingface.co/datasets/geometricdatasets/Neural-CG-Benchmark')
+        self.raw_data_pth = Path(f'{self.default_raw_data_dir}/rna.npy')
+        if not self.raw_data_pth.is_file() and auto_download:
+            self._auto_download(self.default_raw_data_dir)
+        elif not self.raw_data_pth.exists() and not auto_download:
+            raise FileNotFoundError(f'RNAseq data not found in {self.raw_data_pth}. Please download from https://huggingface.co/datasets/geometricdatasets/Neural-CG-Benchmark')
 
-        raw_data = np.load(self.root)
+        raw_data = np.load(self.raw_data_pth)
 
         rng = np.random.default_rng(seed=42)
         self.length = length
