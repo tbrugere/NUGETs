@@ -25,12 +25,17 @@ class Task():
     dataset_parameters: dict
     ood_dataset_name: str 
     ood_dataset_parameters: dict
+    task_parameters: dict | None
 
-    def __init__(self, dataset, dataset_parameters, ood_dataset_name, ood_dataset_parameters):
+    def __init__(self, dataset, dataset_parameters, ood_dataset_name, ood_dataset_parameters, task_parameters=None):
         self.dataset_name = dataset
         self.dataset_parameters = dataset_parameters
         self.ood_dataset_name = ood_dataset_name
         self.ood_dataset_parameters = ood_dataset_parameters
+        if task_parameters:
+            self.task_parameters = task_parameters
+        else:
+            self.task_parameters=None
 
     def consistent_hash(self) -> bytes:
         """Hash the task"""
@@ -39,6 +44,12 @@ class Task():
         b.write(bytes(1))
         b.write(dict_to_bytes(self.dataset_parameters))
         return hashlib.sha256(b.getvalue()).digest()
+
+    def consistent_task_parameter_hash(self) -> bytes | None:
+        if self.task_parameters:
+            b = BytesIO()
+            b.write(dict_to_bytes(self.task_parameters))
+            return hashlib.sha256(b.getvalue()).digest()
     
     def consistent_ood_hash(self) -> bytes:
         """Hash OOD dataset"""
@@ -86,6 +97,9 @@ class Task():
         task_name = self.__class__.__name__
         task_hash: bytes = self.consistent_ood_hash() if which == 'ood' else self.consistent_hash()
         task_hash_b64: str = b64encode(task_hash, altchars=b':-').decode()
+        if self.task_parameters:
+            task_parameter_hash: bytes = self.consistent_task_parameter_hash()
+            return f"{task_name}_{task_parameter_hash}_{task_hash_b64}_{which}.tar"
         return f"{task_name}_{task_hash_b64}_{which}.tar"
 
     def get_cached_processed_dataset_path(self, which: Literal["train", "val", "test", "ood"]) -> Path:

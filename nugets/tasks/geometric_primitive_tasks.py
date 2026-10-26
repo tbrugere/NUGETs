@@ -38,7 +38,7 @@ class SetToQuerySetTransform(Transform):
         pointset, label, query =self.label(pointset)
         return QueryDatapoint(pointset=pointset, label=label, query=query)
 
-class SetToPointRegressionTask(Task):
+class SetToPointIdentificationTask(Task):
     """
     Base task for tasks where one needs the index. 
     """
@@ -158,7 +158,7 @@ class ApproximateNearestNeighborTask(ApproximateQueryRegressionTask):
         return dict(center_difference = center_diff_mean)
 
 @register
-class NearestNeighborRegressionTask(SetToPointRegressionTask):
+class NearestNeighborIdentificationTask(SetToPointIdentificationTask):
     """
     Task for learning to output the nearest neighbor given an input point cloud and query.
     Training examples are in the form (S, l, q) where S is the point cloud, l is the "label" (or the nearest neighbor)
@@ -181,7 +181,7 @@ class NearestNeighborRegressionTask(SetToPointRegressionTask):
         return torch.tensor(modified_pointset), torch.tensor(raw_pointcloud[nn_idx]).float(), pointset[q_idx]
 
 @register
-class ExtremalPointRegressionTask(SetToPointRegressionTask):
+class ExtremalPointIdentificationTask(SetToPointIdentificationTask):
     """
     Task for learning to output the furthest point in a direction given an input point cloud and a query direction.
     Training examples are in the form (S, l, q) where S is the point cloud, l is the "label" (or the furthest point)

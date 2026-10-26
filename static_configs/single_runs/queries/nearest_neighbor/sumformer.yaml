@@ -1,5 +1,5 @@
 task:
-  type: NearestNeighborRegressionTask
+  type: NearestNeighborIdentificationTask
   dataset: GaussianBlobs
   dataset_config:
     length: 500

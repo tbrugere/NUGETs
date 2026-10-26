@@ -1,5 +1,5 @@
 task:
-  type: ExtremalPointRegressionTask
+  type: ExtremalPointIdentificationTask
   dataset: ModelNetPointset
   dataset_config:
     name: '10'

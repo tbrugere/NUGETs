@@ -1,0 +1,22 @@
+task:
+  type: ApproximateNearestNeighborTask
+  dataset: RNASeqPointCloud
+  dataset_config:
+    length: 1000
+    size: 100
+  ood_dataset: RNASeqPointCloud
+  ood_config:
+    length: 10
+    size: 200
+backbone:
+  type: QueryNetwork
+  encoder:
+    type: Sumformer
+    n_heads: 2
+    n_layers: 3
+    d_model: 64
+    feed_forward_hidden_dim: 128
+batch_size: 64
+learning_rate: 0.0001
+debug_mode: true
+loss_function: mse_loss

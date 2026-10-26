@@ -1,0 +1,30 @@
+task:
+  type: ApproximateExtremalPointTask
+  dataset: GaussianBlobs
+  dataset_config:
+    length: 1000
+    dim: 2
+    min_points: 50
+    max_points: 100
+    centers: 4
+  ood_dataset: GaussianBlobs
+  ood_config:
+    length: 10
+    dim: 2
+    min_points: 150
+    max_points: 200
+    centers: 4
+backbone:
+  type: QueryNetwork
+  encoder:
+    type: Linformer
+    n_heads: 2
+    n_layers: 3
+    d_model: 64
+    max_seq_len: 200
+    projection_dim: 32
+    feed_forward_hidden_dim: 128
+batch_size: 64
+learning_rate: 0.0001
+debug_mode: true
+loss_function: mse_loss

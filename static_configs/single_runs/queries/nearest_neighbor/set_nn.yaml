@@ -1,5 +1,5 @@
 task:
-  type: NearestNeighborRegressionTask
+  type: NearestNeighborIdentificationTask
   dataset: GaussianBlobs
   dataset_config:
     length: 1000
@@ -12,11 +12,12 @@ task:
     max_points: 200
 backbone:
   type: QueryNetwork
-  encoder: 
+  encoder:
     type: SetNN
     d_model: 64
     embedding_layers: 2
     embedding_hidden_dim: 128
+batch_size: 64
 batch_size: 64
 learning_rate: 1.e-4
 debug_mode: True

@@ -1,5 +1,5 @@
 task:
-  type: ExtremalPointRegressionTask
+  type: ExtremalPointIdentificationTask
   dataset: RNASeqPointCloud
   dataset_config:
     length: 1000

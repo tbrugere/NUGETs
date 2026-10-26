@@ -56,13 +56,14 @@ class TaskConf(pydantic.BaseModel, ConfigConsistentHashMixin):
     dataset_config: dict
     ood_dataset: str
     ood_config: dict
+    task_parameters: dict = pydantic.Field(default_factory=dict)
     model_config = pydantic.ConfigDict(extra="forbid")
 
     def load(self):
         from nugets.tasks import get_tasks_register
         register = get_tasks_register()
         task_type = register[self.type]
-        return task_type(self.dataset, self.dataset_config, ood_dataset_name=self.ood_dataset, ood_dataset_parameters=self.ood_config)
+        return task_type(self.dataset, self.dataset_config, ood_dataset_name=self.ood_dataset, ood_dataset_parameters=self.ood_config, task_parameters=self.task_parameters)
 
 
 class BackboneConf(pydantic.BaseModel, ConfigConsistentHashMixin):
