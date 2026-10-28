@@ -20,7 +20,8 @@ class EpsilonKernelNetwork(BackBone):
     Epsilon Kernel network backbone for point clouds
 
     Like the query model, this network should take other models as a backbone. 
-
+    In a strange twist, this should not be used for the Epsilon-Kernel task
+    TODO: Forbid this from being used for Epsilon-Kernel task
     Output: 
         Let d_in and d_out be the input and output dimensions of the model. This model outputs a 
         tensor of shape (Bd_out, d_in) where B is the batch size.
@@ -30,6 +31,7 @@ class EpsilonKernelNetwork(BackBone):
     encoder: InnerBackbone = other_backbone_hyperparameter("backbone for the encoder")
 
     set_encoder: BackBone = model_attribute()
+
 
     def __setup__(self):
         self.set_encoder = self.encoder.load()

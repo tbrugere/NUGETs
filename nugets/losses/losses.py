@@ -201,7 +201,7 @@ def directional_width_loss(predicted, target, in_dim,n=100, **kwargs):
         ``data`` and set indices in ``batch1``.
     :param in_dim: Dimension of the point coordinates.
     :type in_dim: int
-    :param n: Unused. The implementation always samples 100 directions.
+    :param n: Number of sampled directions.
     :type n: int
     :param kwargs: Additional keyword arguments; ignored.
     :returns: Mean summed error in projection extrema across the batch.
@@ -214,7 +214,7 @@ def directional_width_loss(predicted, target, in_dim,n=100, **kwargs):
         for background on directional width.
     """
     uniform_sphere_dist = uniform_direction(dim=in_dim)
-    directions = torch.tensor(uniform_sphere_dist.rvs(100), dtype=torch.float32, device=target.data.device)
+    directions = torch.tensor(uniform_sphere_dist.rvs(n), dtype=torch.float32, device=target.data.device)
     
     proj_predicted = torch.matmul(predicted.data, directions.T)
     proj_target = torch.matmul(target.data, directions.T)

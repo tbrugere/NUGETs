@@ -1,6 +1,8 @@
 task:
   type: AlphaShape2MembershipTask
   dataset: GaussianBlobs
+  task_parameters:
+    alpha: 5.0
   dataset_config:
     length: 1000
     min_points: 50
@@ -16,9 +18,9 @@ task:
     dim: 2
 backbone:
   type: SetNN
-  d_model: 16
+  d_model: 64
   embedding_layers: 3
-  embedding_hidden_dim: 64
+  embedding_hidden_dim: 128
 batch_size: 32
 learning_rate: 1.e-4
 loss_function: scatter_binary_focal_loss

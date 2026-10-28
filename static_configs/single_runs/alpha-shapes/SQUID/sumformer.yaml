@@ -1,17 +1,23 @@
 task:
   type: AlphaShape2MembershipTask
   dataset: SQUIDBoundaries
+  task_parameters:
+    alpha: 5.0
   dataset_config:
     normalization: True
-  ood_dataset: SQUIDBoundaries
+  ood_dataset: GaussianBlobs
   ood_config:
-    normalization: True
+    length: 300
+    min_points: 200
+    max_points: 300
+    centers: 4
+    dim: 2
 backbone:
   type: Sumformer
   n_heads: 1
   n_layers: 3
-  d_model: 16
-  feed_forward_hidden_dim: 64
+  d_model: 64
+  feed_forward_hidden_dim: 128
 batch_size: 32
 learning_rate: 1.e-4
 loss_function: scatter_binary_focal_loss

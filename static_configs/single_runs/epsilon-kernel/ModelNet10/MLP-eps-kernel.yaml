@@ -1,0 +1,21 @@
+task:
+  type: EpsilonKernelTask
+  dataset: ModelNetPointset
+  dataset_config:
+    name: '10'
+    size: 256
+    length: 1000
+  ood_dataset: ModelNetPointset
+  ood_config:
+    name: '10'
+    size: 512
+    length: 300
+backbone:
+  type: SetNN
+  d_model: 64
+  embedding_layers: 3
+  embedding_hidden_dim: 128
+batch_size: 128
+learning_rate: 1.e-4
+loss_function: directional_width_loss
+aggregation: mean

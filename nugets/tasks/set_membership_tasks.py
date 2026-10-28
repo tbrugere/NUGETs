@@ -101,10 +101,17 @@ class AlphaShape2MembershipTask(SetMembershipTask):
     """
     Predict membership in the convex hull. Returns a one-hot encoding corresponding to points in the convex hull. 
     """
-    def label(self, pointset, alpha=5.0, use_cgal=False):
+    def __init__(self, *args, alpha=5.0, use_cgal=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.alpha = alpha
+        self.use_cgal=use_cgal            
+        
+    def label(self, pointset):
         """
         Use CGAL to compute an alpha shape for 2D points
         """
+        alpha = self.alpha
+        use_cgal= self.use_cgal
         if use_cgal:
             from CGAL.CGAL_Kernel import Point_2
             from CGAL.CGAL_Alpha_shape_2 import Alpha_shape_2
@@ -113,7 +120,6 @@ class AlphaShape2MembershipTask(SetMembershipTask):
             from CGAL.CGAL_Alpha_shape_2 import Alpha_shape_2_Vertex_handle
 
             # TODO: Add assertion for 2D alpha shape
-            # TODO: Add task parameters to set the alpha in alpha shape
             cgal_pts = []
             for pt in pointset:
                 cgal_pts.append(Point_2(pt[0].item(), pt[1].item()))
